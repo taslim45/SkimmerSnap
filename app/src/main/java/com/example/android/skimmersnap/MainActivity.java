@@ -65,9 +65,10 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void vibrateInPattern() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                long[] mVibratePattern = new long[]{0, 400, 400, 400};
+                long[] mVibratePatternTime = new long[]{0, 100, 50, 50, 50, 100, 50, 50, 50, 50};
+                int[] mVibratePatternAmps = new int[] {0, 200, 0, 100, 0, 200, 0, 100, 0, 50};
                 //vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE));
-                VibrationEffect effect = VibrationEffect.createWaveform(mVibratePattern, -1);
+                VibrationEffect effect = VibrationEffect.createWaveform(mVibratePatternTime, mVibratePatternAmps, -1);
                 vibrator.vibrate(effect);
             }
         }

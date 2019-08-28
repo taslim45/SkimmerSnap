@@ -25,7 +25,7 @@ let sentence = function(startTime, endTime, startId, hasVisual, serial, visualId
     this.notified = false;
 }
 
-let visual = function(id, type, announcementSrc, captionSrc, announcementJSON, announcementContainerId, captionJSON, captionContainerId) {
+let visual = function(id, type, announcementSrc, captionSrc, announcementJSON, announcementContainerId, captionJSON, captionContainerId, nickname) {
     this.id = id;
     this.type = type;
     this.isCaption = false;
@@ -42,6 +42,7 @@ let visual = function(id, type, announcementSrc, captionSrc, announcementJSON, a
     this.captionWordList = [];
     this.captionSentenceList = [];
     this.resumeId = null;
+    this.nickname = nickname;
 }
 let visualList = [];
 function addArticleReference(visual, id) {
@@ -207,7 +208,8 @@ function populateVisualObject() {
             figAnnouncementJSONs[vizId],
             figAnnouncementContainerList[vizId],
             figCaptionJSONs[vizId],
-            figCaptionContainerList[vizId]
+            figCaptionContainerList[vizId],
+            visualNickNames[vizId]
         );
         vizObj.announcementWordList = getWords(vizObj.announcementContainerId, vizObj.announcementJson);
         vizObj.announcementSentenceList = getSentences(vizObj.announcementContainerId, vizObj.announcementJson);
@@ -229,7 +231,7 @@ function getVizObjectById(visualId) {
 }
 
 function createPlayList() {
-
+    initVizMapper();
     populateVisualObject();
     for(let playIndex = 0; playIndex < audioFiles.length; playIndex++) {
         let playObj = new plays(containerIdList[playIndex], audioFiles[playIndex], jsonVarObj[playIndex], playContentType[playIndex], isTextDecorated[playIndex], playIndex, speechRateVariants[playIndex]);
@@ -247,4 +249,17 @@ function createPlayList() {
 
 function getPlayListSize() {
     return playList.length;
+}
+
+let visualNameMapper = new Map();
+
+function initVizMapper() {
+    visualNameMapper.clear();
+    visualNameMapper.set("fig1", "Figure 1");
+}
+
+function getVizName(key) {
+    if(visualNameMapper.has(key)) {
+        return visualNameMapper.get(key);
+    }
 }

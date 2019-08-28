@@ -183,7 +183,7 @@ function removeNumericOverlay() {
 
 function displayFigureFab(text) {
     let fabElement = document.getElementById('figurefab');
-    fabElement.style.bottom = '' + (window.innerHeight * 0.30) + 'px';
+    fabElement.style.bottom = '' + (window.innerHeight * 0.25) + 'px';
     fabElement.style.display = 'block';
     fabElement.firstElementChild.innerHTML = "Show " + text;
 }

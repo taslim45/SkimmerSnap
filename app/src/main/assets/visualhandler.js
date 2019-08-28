@@ -82,7 +82,7 @@ function processVisuals(currentTime, sentencelist) {
 function sendNotification(sentence) {
     sentence.notified = true;
     pushToVisualShow(sentence.visualId, sentence);
-    
+    //modulateEarcon(earcons[VIZ_NOTIFICATION], 1.0);
     Android.vibrateInPattern();
 }
 
