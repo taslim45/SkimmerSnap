@@ -168,6 +168,7 @@
     let playbackstatus = STOPPED;
     let readingElementId = null;
     let lastMediaObject = null;
+    let delayAndStackRequest = false;
     let visualStatusManager = function(state, sentenceWithVisual) {
         this.state = state;
         this.sentenceWithVisual = sentenceWithVisual;
@@ -224,6 +225,7 @@
             lastMediaObject = mediaObject;
             clearSentenceProcessor();
             clearVisuals();
+            delayAndStackRequest = false;
             //clearDiscourseQueue();
             if(isFigureFabDisplayed()) {
                 cancelFigureFab();
@@ -281,15 +283,31 @@
             }
             mediaSpeechRate = mediaObject.speechRate;
             mediaSource = mediaObject.audioSource;
+            
         }
 
         let contentAudioElm = document.getElementById("contentAudio");
         contentAudioElm.setAttribute("src", mediaSource);
         contentAudioElm.currentTime = startingTime;
         contentAudioElm.playbackRate = mediaSpeechRate;
-        setTimeout(function() {
-            contentAudioElm.play();
-        }, COOLING_TIME);
+
+        if(mediaType == ANNOUNCEMENT) {
+            let readingNowAnnouncementElement = document.getElementById("readingnowAudio");
+            readingNowAnnouncementElement.setAttribute("src", earcons[READING_NOW]);
+            readingNowAnnouncementElement.play();
+            readingNowAnnouncementElement.onended = function() {
+                readingNowAnnouncementElement.pause();
+                readingNowAnnouncementElement.setAttribute("src", "");
+                setTimeout(function() {
+                    contentAudioElm.play();
+                }, COOLING_TIME);
+            };
+        }
+        else {
+            setTimeout(function() {
+                contentAudioElm.play();
+            }, COOLING_TIME);
+        }
 
         contentAudioElm.ontimeupdate = function() {
             if(discourseRequest && contentAudioElm.currentTime >= (discourseEndTime - 0.1) && contentAudioElm.currentTime <= (discourseEndTime + 0.2)) {
@@ -361,6 +379,8 @@
                 nextStartId = nextMediaObject.startId;
                 nextStartTime = 0;
             }
+            
+            
             setTimeout(function() {
                 startPlayback(nextMediaObject, nextStartId, nextStartTime);
             }, 100); // a cooling time so that media reset is successful
@@ -481,54 +501,75 @@
             let cntAudio = document.getElementById("contentAudio");
             let playingSentenceList = currentPlayObject.sentenceList;
             let timePlaying = cntAudio.currentTime;
-            let currentSentence = findSentenceFromTime(timePlaying, playingSentenceList);
+            
             if(tapDir == "RIGHT") {
-                if(currentSentence && currentSentence.serial < playingSentenceList.length - 1) {
-                    modulateEarcon(earcons[SENTENCE_DELIM], 1.0);
-                    setReadingElementId(playingSentenceList[currentSentence.serial + 1].startId);
+                // forward
+                if(currentPlayObject.type == ANNOUNCEMENT) {
+                    // move to next play object, which is a text
+                    let nextPlayObject = getPlayFromPlayList(currentPlayIndex + 1);
+                    setReadingElementId(nextPlayObject.startId);
+                    playAudio();
                 }
                 else {
-                    let playIterator = currentPlayIndex + 1;
-                    let nextPlayObject = getPlayFromPlayList(playIterator);
-                    while(nextPlayObject.type != MAIN && nextPlayObject.type != ANNOUNCEMENT) {
-                        playIterator++;
-                        nextPlayObject = getPlayFromPlayList(playIterator);
+                    // its a text object
+                    let currentSentence = findSentenceFromTime(timePlaying, playingSentenceList);
+                    if(currentSentence && currentSentence.serial < playingSentenceList.length -1) {
+                        // next sentence available
+                        modulateEarcon(earcons[SENTENCE_DELIM], 1.0);
+                        setReadingElementId(playingSentenceList[currentSentence.serial + 1].startId);
+                        playAudio();
                     }
-                    modulateEarcon(earcons[SECTION_DELIM], 1.0);
-                    console.log(nextPlayObject);
-                    setReadingElementId(nextPlayObject.startId);
+                    else {
+                        // next paragraph. let the default earcon play
+                        let nextPlayObject = getPlayFromPlayList(currentPlayIndex + 1);
+                        startPlayback(nextPlayObject, nextPlayObject.startId, 0);
+                    }
                 }
             }
             else if(tapDir == "LEFT") {
-                let currStartTime = currentSentence.startTime;
-                if(timePlaying - currStartTime <= 3) {
-                    if(currentSentence.serial > 0) {
-                        modulateEarcon(earcons[SENTENCE_DELIM], 1.0);
-                        setReadingElementId(playingSentenceList[currentSentence.serial - 1].startId);
+                // backward
+                if(currentPlayObject.type == ANNOUNCEMENT) {
+                    modulateEarcon(earcons[PARAGRAPH_DELIM], 1.0);
+                    let prevPlayObject = getPlayFromPlayList(currentPlayIndex - 2); // -2 because an earcon comes before announcement
+                    setReadingElementId(prevPlayObject.sentenceList[prevPlayObject.sentenceList.length - 1].startId); // setting to last sentence
+                    playAudio();
+                }
+                else if(currentPlayObject.type == MAIN) {
+                    // currently playing a text
+                    let currentSentence = findSentenceFromTime(timePlaying, playingSentenceList);
+                    if(timePlaying - currentSentence.startTime <= 3) {
+                        // go to previous sentence
+                        if(currentSentence.serial > 0) {
+                            modulateEarcon(earcons[SENTENCE_DELIM], 1.0);
+                            setReadingElementId(playingSentenceList[currentSentence.serial - 1].startId);
+                            playAudio();
+                        }
+                        else {
+                            // go to previous play items
+                            let iterator = currentPlayIndex - 1;
+                            let nextPlayObject = getPlayFromPlayList(iterator);
+                            while(nextPlayObject.type != MAIN && nextPlayObject.type != ANNOUNCEMENT) {
+                                iterator--;
+                                nextPlayObject = getPlayFromPlayList(iterator);
+                            }
+                            if(nextPlayObject.type == MAIN) {
+                                modulateEarcon(earcons[PARAGRAPH_DELIM], 1.0);
+                                setReadingElementId(nextPlayObject.sentenceList[nextPlayObject.sentenceList.length - 1].startId);
+                                playAudio();
+                            }
+                            else {
+                                startPlayback(nextPlayObject, nextPlayObject.startId, 0);
+                            }
+                        }
                     }
                     else {
-                        let playIterator = currentPlayIndex - 1;
-                        let prevPlayObject = getPlayFromPlayList(playIterator);
-                        while(prevPlayObject.type != MAIN && prevPlayObject.type != ANNOUNCEMENT) {
-                            playIterator--;
-                            prevPlayObject = getPlayFromPlayList(playIterator);
-                        }
-                        if(prevPlayObject.type == MAIN) {
-                            playingSentenceList = prevPlayObject.sentenceList;
-                            modulateEarcon(earcons[SECTION_DELIM], 1.0);
-                            setReadingElementId(playingSentenceList[playingSentenceList.length - 1].startId);
-                        }
-                        else if(prevPlayObject.type == ANNOUNCEMENT) {
-                            setReadingElementId(prevPlayObject.startId);
-                        }
-                        
+                        // repeat same sentence
+                        setReadingElementId(currentSentence.startId);
+                        playAudio();
                     }
                 }
-                else {
-                    setReadingElementId(currentSentence.startId);
-                }
             }
-            playAudio();
+            
         }
     }
 
@@ -698,6 +739,7 @@
 
 <body id="main" onload="toDoWhenPageLoaded()">
     <audio id="contentAudio"><source type="audio/mpeg"></audio>
+    <audio id="readingnowAudio"><source type="audio/mpeg"></audio>
     <div id="topnavbar">
         <div class="btn-group">
             <button onclick="navigateToOverviewPage()" id="overviewbutton">Overview</button>
@@ -1424,7 +1466,6 @@
             topleftbox.style.display = toprighttbox.style.display = bottomleftbox.style.display = bottomrightbox.style.display = 'block';
             topleftbox.style.position = toprighttbox.style.position = bottomleftbox.style.position = bottomrightbox.style.position = 'fixed';
 
-            //topleftbox.addEventListener('click', topleftClickF);
             document.getElementById('scrollable').appendChild(topleftbox);
             document.getElementById('scrollable').appendChild(toprighttbox);
             document.getElementById('scrollable').appendChild(bottomleftbox);

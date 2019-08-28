@@ -178,7 +178,7 @@ function notifySpeechRateChange(speechrate) {
 
 function modulateEarcon(earconSrc, rate) {
     let earconElement = document.createElement("audio");
-    earconElement.volume = 0.10;
+    
     earconElement.setAttribute("src", earconSrc);
     earconElement.playbackRate = rate;
     earconElement.play();
