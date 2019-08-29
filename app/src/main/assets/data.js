@@ -1748,7 +1748,12 @@ let sec1_main_para1JSON =
                 59.98
               ]
             ],
-            "keywords": []
+            "keywords": [
+              [
+                32,
+                32.83
+              ]
+            ]
           }
         ],
         "final": true
@@ -2238,7 +2243,12 @@ let sec1_main_para2JSON =
                     35.41
                 ]
             ],
-            "keywords": []
+            "keywords": [
+              [
+                0.03,
+                1.08
+              ]
+            ]
           }
         ],
         "final": true
@@ -3279,7 +3289,32 @@ let sec1_main_para3JSON =
                 78.15
               ]
             ],
-            "keywords": []
+            "keywords": [
+              [
+                0.03,
+                0.96
+              ],
+              [
+                10.36,
+                11.1
+              ],
+              [
+                19.58,
+                20.42
+              ],
+              [
+                39.15,
+                39.78
+              ],
+              [
+                54.32,
+                55.04
+              ],
+              [
+                62.37,
+                63.09
+              ]
+            ]
           }
         ],
         "final": true
@@ -3559,7 +3594,16 @@ let sec1_main_para4JSON =
                 21.01
               ]
             ],
-            "keywords": []
+            "keywords": [
+              [
+                4.73,
+                5.38
+              ],
+              [
+                9.85,
+                10.45
+              ]
+            ]
           }
         ],
         "final": true
@@ -4012,7 +4056,20 @@ let sec1_main_para5JSON =
                 "fig1"
               ]
             ],
-            "keywords": []
+            "keywords": [
+              [
+                0.03,
+                0.93
+              ],
+              [
+                17.85,
+                18.51
+              ],
+              [
+                26.33,
+                26.99
+              ]
+            ]
           }
         ],
         "final": true
@@ -4933,7 +4990,20 @@ let sec1_main_para6JSON =
                 63.19
               ]
             ],
-            "keywords": []
+            "keywords": [
+              [
+                0.03,
+                0.74
+              ],
+              [
+                26,
+                26.98
+              ],
+              [
+                31.17,
+                31.78
+              ]
+            ]
           }
         ],
         "final": true
@@ -5284,7 +5354,20 @@ let sec1_main_para7JSON =
                 24.62
               ]
             ],
-            "keywords": []
+            "keywords": [
+              [
+                0.71,
+                1.25
+              ],
+              [
+                10.37,
+                11.08
+              ],
+              [
+                17.25,
+                18.26
+              ]
+            ]
           }
         ],
         "final": true

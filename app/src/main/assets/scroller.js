@@ -63,3 +63,7 @@ function scrollElementToCenter(element) {
         left: 0,
         behavior: 'smooth'});
 }
+
+function scrollDownExtra() {
+    document.documentElement.scrollBy(0,-40);
+}

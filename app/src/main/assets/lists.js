@@ -97,3 +97,30 @@ let figAnnouncementContainerList = [
 let figCaptionContainerList = [
     "fig1captionId"
 ];
+
+let overviewContainerIds = [
+    "overviewhighlight",
+    "abstract_main",
+    "sec1_main",
+    "sec2_main",
+    "sec2_sub1",
+    "sec2_sub2",
+    "sec2_sub3",
+    "sec3_main",
+    "sec3_sub1",
+    "sec3_sub2",
+    "sec3_sub3",
+    "sec4_main",
+    "sec5_main",
+    "sec5_sub1",
+    "sec5_sub2",
+    "sec5_sub3",
+    "sec5_sub4",
+    "sec5_sub5",
+    "sec5_sub6",
+    "sec6_main",
+    "sec6_sub1",
+    "sec6_sub2",
+    "sec6_sub3",
+    "sec7_main",
+];

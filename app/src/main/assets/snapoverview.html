@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+    <title>Impact of Contextual Factors on Snapchat Public Sharing</title>
+    <!-- Copyright (c) 2010-2015 The MathJax Consortium -->
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+    <meta name="viewport" content="width=device-width; initial-scale=1.0;"></meta>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
+    <link media="screen, print" rel="stylesheet" href="https://dl.acm.org/pubs/lib/css/bootstrap.min.css" />
+    <link media="screen, print" rel="stylesheet" href="https://dl.acm.org/pubs/lib/css/bootstrap-theme.min.css" />
+    <link media="screen, print" rel="stylesheet" href="https://dl.acm.org/pubs/lib/css/main.css" />
+    <script src="https://dl.acm.org/pubs/lib/js/jquery.min.js" type="text/javascript"></script>
+    <script src="https://dl.acm.org/pubs/lib/js/bootstrap.min.js" type="text/javascript"></script>
+    <script src="https://dl.acm.org/pubs/lib/js/bibCit.js" type="text/javascript"></script>
+    <script src="https://dl.acm.org/pubs/lib/js/divTab.js" type="text/javascript"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_CHTML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});</script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/zingtouch/1.0.6/zingtouch.min.js"></script>
+    <script type="text/javascript" src="https://hammerjs.github.io/dist/hammer.js"></script>
+
+    <script src="mystrings.js" type="text/javascript"></script>
+    <script src="data.js" type="text/javascript"></script>
+    <script src="lists.js" type="text/javascript"></script>
+    <script src="playsource.js" type="text/javascript"></script>
+    <script src="displaymodule.js" type="text/javascript"></script>
+    <script src="audioengine.js" type="text/javascript"></script>
+    <script src="scroller.js" type="text/javascript"></script>
+    <script src="buttonhandler.js" type="text/javascript"></script>
+    <script src="touchsupport.js" type="text/javascript"></script>
+    <script src="sensingmodule.js"></script>
+    <script src="visualhandler.js"></script>
+    <script src="navigationhandler.js"></script>
+
+    <style>
+        #emptyDiv {
+            height: 45vh;
+            width: 100%;
+            display: block;
+        }
+        
+        #scrollable {
+            margin: auto;
+        }
+        
+        #arrowpointer {
+            position: fixed;
+            height: auto;
+            width: auto;
+            top: 44%;
+            left: 0;
+        } 
+        #arrowpointer > img {
+            position: fixed;
+            margin: 7px 0px 0px 0px;
+        }
+        #rectangle {
+            position: fixed;
+            margin: 3px 0px 0px 0px;
+            width: 100%;
+            background: yellow;
+            opacity: 0.3;
+            z-index: 99;
+            border-style: solid;
+            border-color: yellowgreen;
+            border-width: thin;
+            display: none;
+        }
+        #spchrateoverlay {
+            position: fixed;
+            display: none;
+            z-index: 999;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            right: 0; 
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .overlaywrapper {
+            text-align: center;
+            display: none;
+            position: fixed;
+            z-index: 100;
+            width: auto;
+            height: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .numericoverlay {
+            display: inline-block;
+            word-wrap: break-word;
+            color: white;
+        }
+
+        #topnavbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999;
+            width: 100vw;
+            background-color: #363640;
+            overflow: hidden;
+        }
+        
+        .btn-group button {
+            box-sizing: border-box;
+            background-color: #363640; 
+            width: 50vw;
+            color:#ccccb3; 
+            padding: 10px 24px; 
+            cursor: pointer; 
+            float: left; 
+            font-size: 13px;
+            border-top: none;
+            border-right: none;
+            border-left: none;
+            border-bottom-style: solid;
+            border-bottom-color: #363640;
+            border-bottom-width: 3px;
+            margin: 0px 0px 0.01px 0px; 
+        }
+
+        .btn-group .active {
+            box-sizing: border-box;
+            background-color: #363640;
+            color: white;
+            border-top: none;
+            border-right: none;
+            border-left: none;
+            border-bottom-style: solid;
+            border-bottom-color: #3366cc;
+            border-bottom-width: 4px;
+            margin: 0px 0px 0.01px 0px;
+        }
+
+        .btn-group button:focus {
+            border: none;
+            outline: none;
+        }
+
+        /* Clear floats (clearfix hack) */
+        .btn-group:after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+    </style>
+
+    <script>
+        let defaultSpeakingRate = 1.0;
+        let headerItemsMap = new Map();
+        let speakingAtId = null;
+
+        function setSpeakingAtId(id) {
+            speakingAtId = id;
+        }
+
+        function getSpeakingAtId() {
+            return speakingAtId;
+        }
+
+        let headerItems = function(audioSource, elementId) {
+            this.audioSource = audioSource;
+            this.elementId = elementId;
+        }
+        function prepareOverviewData() {
+            headerItemsMap.clear();
+            
+            let audioSourcePrefix = "audio/overview/";
+            let audioSourceSuffix = ".mp3";
+            for(let i=0; i<overviewContainerIds.length; i++) {
+                let overviewContainerId = overviewContainerIds[i];
+                let audSrc = audioSourcePrefix + overviewContainerId + audioSourceSuffix;
+                headerItemObject = new headerItems( audSrc, overviewContainerId);
+                headerItemsMap.set(overviewContainerId, headerItemObject);
+            }
+        }
+        function navigateToArticle() {
+            window.open("file:///android_asset/snapchat.html", "_self");
+        }
+
+        function itemInTheMiddle() {
+            let seekX = window.innerWidth / 2;
+            let seekY = 0.45 * window.innerHeight;
+            let elem = document.elementFromPoint(seekX, seekY);
+            while(elem.tagName != "LI") {
+                // waiting for it to detect a LI list item
+                seekY += 1.0;
+                elem = document.elementFromPoint(seekX, seekY);
+            }
+            return elem;
+        }
+
+        function getItemData(itemElement) {
+            if(headerItemsMap.has(itemElement.id)) {
+                return headerItemsMap.get(itemElement.id);
+            }
+        }
+
+        function speakCurrentReadingPositionFromArticle(currentPositionId) {
+            let itemData = getItemData(document.getElementById(currentPositionId));
+            let audioPipeline = [];
+            // push items in inverted order
+            audioPipeline.push(itemData.audioSource);
+            audioPipeline.push(overviewInfodioFiles[3]); // "reading now" audio file
+            speakNow(audioPipeline, audioPipeline.length - 1);
+        }
+
+        function speakNavigationChange(currentPositionId) {
+            let itemData = getItemData(document.getElementById(currentPositionId));
+            let audioPipeline = [];
+            // push items in inverted order
+            audioPipeline.push(itemData.audioSource);
+            audioPipeline.push(earcons[SECTION_DELIM]);
+            if(isSection(currentPositionId)) {
+                // current selection is a section
+                speakNow(audioPipeline, audioPipeline.length - 1, false, 1.4);
+            }
+            else speakNow(audioPipeline, audioPipeline.length - 1, true, 0.4);
+        }
+
+        function speakDefaultSummary(currentPositionId) {
+            let itemData = getItemData(document.getElementById(currentPositionId));
+            let audioPipeline = [];
+            // push items in inverted order
+            audioPipeline.push(itemData.audioSource);
+            speakNow(audioPipeline, audioPipeline.length - 1, false, 1.0);
+        }
+
+        function speakNow(audioPipeline, pipelineIndex, modulate, rate) {
+            if(pipelineIndex > -1) {
+                let ovAudioElement = document.getElementById('overviewAudio');
+                ovAudioElement.setAttribute("src", audioPipeline[pipelineIndex]);
+                if(modulate) ovAudioElement.playbackRate = rate;
+                else ovAudioElement.playbackRate = defaultSpeakingRate;
+                setTimeout(function() {
+                    ovAudioElement.play();
+                }, COOLING_TIME);
+                ovAudioElement.onended = function() {
+                    ovAudioElement.pause();
+                    ovAudioElement.setAttribute("src", "");
+                    pipelineIndex--;
+                    speakNow(audioPipeline, pipelineIndex, false, 1.0);
+                }
+            }
+        }
+
+        function isSpeaking() {
+            let ovAudioElement = document.getElementById('overviewAudio');
+            if(ovAudioElement.currentTime > 0 && !ovAudioElement.paused && !ovAudioElement.ended) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        function pauseSpeaking() {
+            let ovAudioElement = document.getElementById('overviewAudio');
+            ovAudioElement.pause();
+        }
+
+        function processCurrentSelection() {
+            if(getSpeakingAtId()) {
+                if(isSpeaking()) pauseSpeaking();
+                //setSelectionSuccessEarcon();
+                setOpenSuccessEarcon();
+                localStorage.setItem(OVERVIEW_REQUEST_ID, getSpeakingAtId());
+                setTimeout(function() {
+                    navigateToArticle();
+                }, 500);
+            }
+        }
+
+        function isSection(id) {
+            if(id == 'pAbstract' || id == 'overviewhighlight') return true; // bad patch for an edge case
+            let splitParts = id.split('_');
+            if(splitParts && splitParts.length > 1) {
+                return true;
+            }
+            return false;
+        }
+
+        function requestSpeakNow() {
+            if(isSpeaking()) {
+                pauseSpeaking();
+                console.log('pausing');
+            }
+            else {
+                let sensingElement = itemInTheMiddle();
+                setSpeakingAtId(sensingElement.id);
+                speakNavigationChange(sensingElement.id);
+            }
+        }
+    </script>
+</head>
+
+<body id="main" onload="toDoWhenPageLoaded()">
+    <audio id="overviewAudio"><source type="audio/mpeg"><source type="audio/ogg"></audio>
+    <div id="topnavbar">
+        <div class="btn-group">
+            <button class="active" onclick="navigateToOverviewPage()" id="overviewbutton">Overview</button>
+            <button onclick="navigateToArticle()" id="playpausebutton">
+                Article
+            </button>
+        </div>
+    </div>
+    <div id="arrowpointer">
+        <img src="img/arrow-right.png" style="width:20px">
+        <div id="rectangle"></div>
+    </div>
+    <div id="scrollable">
+        <div id="emptyDiv">
+        </div>
+        <section class="body">
+            <ul id="overviewlist">
+                <li id="overviewhighlight">Summary of Overview</li>
+                <li id="abstract_main">ABSTRACT</li>
+                <li id="sec1_main">1. INTRODUCTION</li>
+                <li id="sec2_main">2. BACKGROUND &amp; RELATED WORK
+                    <ul style="list-style-type:none;">
+                        <li id="sec2_sub1">2.1 Sharing Considerations and Decision Making</li>
+                        <li id="sec2_sub2">2.2 Norms of Snapchat Use</li>
+                        <li id="sec2_sub3">2.3 Snapchat's My Story and Our Story</li>
+                    </ul>
+                </li>
+                <li id="sec3_main">3. SURVEY
+                    <ul style="list-style-type:none;">
+                        <li id="sec3_sub1">3.1 Context Description of Snaps</li>
+                        <li id="sec3_sub2">3.2 Survey Structure</li>
+                        <li id="sec3_sub3">3.3 Survey Data Collection &amp; Analysis</li>
+                    </ul>
+                </li>
+                <li id="sec4_main">4. PARTICIPANT SUMMARY</li>
+                <li id="sec5_main">5. RESULTS
+                    <ul style="list-style-type:none;">
+                        <li id="sec5_sub1">5.1 Snapchat Usage Patterns</li>
+                        <li id="sec5_sub2">5.2 Impact of Identity on Public Sharing</li>
+                        <li id="sec5_sub3">5.3 Impact of Activity on Public Sharing</li>
+                        <li id="sec5_sub4">5.4 Impact of Location on Public Sharing</li>
+                        <li id="sec5_sub5">5.5 Impact of Time on Public Sharing</li>
+                        <li id="sec5_sub6">5.6 Sharing Motivations and Considerations</li>
+                    </ul>
+                </li>
+                <li id="sec6_main">6. DISCUSSION
+                    <ul style="list-style-type:none;">
+                        <li id="sec6_sub1">6.1 Limitations</li>
+                        <li id="sec6_sub2">6.2 Audience Decisions in Content Sharing</li>
+                        <li id="sec6_sub3">6.3 Design Implications</li>
+                    </ul>
+                </li>
+                <li id="sec7_main">7. CONCLUSIONS</li>
+            </ul>
+        </section>
+        <div id="emptyDiv">
+        </div>
+    </div>
+    <script>
+        var zt = null;
+        var touchZone = document.getElementById('scrollable');
+        //var touchZone = document.body;
+        let inSwipeBounds = false;
+        let speedFactor = 0;
+        let direction = null;
+        let lastSensed = null;
+        let newlySensed = null;
+        function initZingTouch() {
+            zt = new ZingTouch.Region(touchZone, true, false);
+            // Region(element, [whether the region listens for captures or bubbles], [prevent default])
+            
+            var zingSwipe = new ZingTouch.Swipe({
+                numInputs: 1,
+                maxRestTime: 100,
+                escapeVelocity: 0.2
+            });
+            var zingPan = new ZingTouch.Pan({
+                numInputs: 1
+            });
+            
+            var startPan = zingPan.start;
+            zingPan.start = function(ev) {
+                console.log('pan started');
+                resetPools();
+                if(getSpeakingAtId()) lastSensed = document.getElementById(getSpeakingAtId());
+                return startPan.call(this, ev);
+            }
+            
+            zt.bind(touchZone, zingPan, function(e) {
+                let panObj = e.detail.data[0];
+                
+                if(isUP(panObj.currentDirection) || isDOWN(panObj.currentDirection)) {
+                    //console.log('Its going UP or DOWN');
+                    
+                }
+                else if(isRIGHT(panObj.currentDirection) || isLEFT(panObj.currentDirection)) {
+                    //console.log('Its going RIGHT or LEFT');
+                }
+
+                if(isUpPoolMax()) {
+                    direction = "UP";
+                    newlySensed = itemInTheMiddle();
+                    if(newlySensed && newlySensed != lastSensed) {
+                        lastSensed = newlySensed;
+                        setSpeakingAtId(lastSensed.id);
+                        speakNavigationChange(lastSensed.id);
+                    }
+                }
+                else if(isDownPoolMax()) {
+                    direction = "DOWN";
+                    newlySensed = itemInTheMiddle();
+                    if(newlySensed && newlySensed != lastSensed) {
+                        lastSensed = newlySensed;
+                        setSpeakingAtId(lastSensed.id);
+                        speakNavigationChange(lastSensed.id);
+                    }
+                }
+                
+            });
+
+            var endPan = zingPan.end; 
+            zingPan.end = function(ev) {
+                console.log('pan end');
+                
+                if(isLeftPoolMax()) {
+                    // confirmed movement in left
+                    console.log('Confirmed movement to the left');
+                    processCurrentSelection();
+                    
+                }
+                else if(isRightPoolMax()) {
+                    // confirmed movement in right
+                    console.log('Confirmed movement to the right');
+                    
+                }
+                else if(isUpPoolMax()) {
+                    //navigationRequest("UP");
+                    direction = "UP";
+                    console.log('Confirmed movement to Up');
+                    if(newlySensed) scrollElementToCenter(newlySensed);
+                }
+                else if(isDownPoolMax()) {
+                    //navigationRequest("DOWN");
+                    direction = "DOWN";
+                    console.log('Confirmed movement to Down');
+                    if(newlySensed) scrollElementToCenter(newlySensed);
+                }
+                
+                return endPan.call(this,ev);
+            }
+
+            zt.bind(touchZone, zingSwipe, function(e) {
+                let swipeObj = e.detail.data[0];
+                //console.log(e.type + ', Velocity: ' + swipeObj.velocity + ', Direction: ' + swipeObj.currentDirection);
+                
+            });
+        }
+
+        function initHammer() {
+            var mc = new Hammer.Manager(touchZone);
+            mc.set({
+                touchAction: "auto"
+            });
+            mc.add( new Hammer.Tap({ 
+                event: 'doubletap', 
+                taps: 2,
+                posThreshold: 20 
+            }) );
+            mc.add( new Hammer.Tap({ event: 'singletap' }) );
+
+            mc.add(new Hammer.Press( {
+                event: 'press',
+                time: 500
+            }));
+
+            // we want to recognize this simulatenous, so a quadrupletap will be detected even while a tap has been recognized.
+            mc.get('doubletap').recognizeWith('singletap');
+            // we only want to trigger a tap, when we don't have detected a doubletap
+            mc.get('singletap').requireFailure('doubletap');
+            mc.get('doubletap').dropRequireFailure('singletap');
+
+
+            mc.on("singletap", function(ev) {
+                requestSpeakNow();
+            });
+
+            mc.on("doubletap", function(ev) {
+                console.log('Type:' + ev.type);
+                
+            });
+
+            let pressInterval = null;
+            mc.on('press', function(ev) {
+                console.log('' + ev.type + ' time:' + ev.deltaTime);
+                console.log('X:' + ev.center.x + ", Y:" + ev.center.y);
+                let timeToInterval = 500 - ev.deltaTime;
+                pressInterval = setTimeout(function() {
+                    modulateEarcon(earcons[OPEN_SUCCESS], 1.0);
+                    requestSpeakNow();
+                }, timeToInterval);
+            });
+
+            mc.on('pressup', function(ev) {
+                console.log('' + ev.type + ' time:' + ev.deltaTime);
+                
+                if(pressInterval) clearTimeout(pressInterval);
+            });
+            
+        }
+
+        function removeThisTagElement(whatToRemove) {
+            var remElem = document.getElementsByTagName(whatToRemove);
+            while(remElem.length > 0) {
+                remElem[0].parentNode.removeChild(remElem[0]);
+            }
+        }
+
+        function dropTopOfPageByHalf() {
+            let emptyDiv = document.getElementById('emptyDiv');
+            let screenHeight = document.documentElement.clientHeight;
+            emptyDiv.style.height = screenHeight/2;
+        }
+
+        function setSelectionSuccessEarcon() {
+            let earAudio = document.createElement("audio");
+            earAudio.setAttribute("src", earcons[SELECT_SUCCESS]);
+            earAudio.play();
+        }
+
+        function setOpenSuccessEarcon() {
+            let earAudio = document.createElement("audio");
+            earAudio.setAttribute("src", earcons[OPEN_SUCCESS]);
+            earAudio.play();
+        }
+
+        function setInitialPosition() {
+            let scrollToId = null;
+            if(typeof(Storage) !== "undefined") {
+                if(localStorage.getItem(OVERVIEW_REQUEST_ID)) {
+                    //setOpenSuccessEarcon();
+                    setSelectionSuccessEarcon();
+                    scrollToId = localStorage.getItem(OVERVIEW_REQUEST_ID);
+                    console.log(scrollToId);
+                    scrollElementToCenter(document.getElementById(scrollToId));
+                    setTimeout(function() {
+                        speakCurrentReadingPositionFromArticle(scrollToId);
+                    }, 700); // wait for some time to speak out current position
+                }
+                else {
+                    // scroll to highlights
+                    scrollToId = 'overviewhighlight';
+                    console.log(scrollToId);
+                    scrollElementToCenter(document.getElementById(scrollToId));
+                    setTimeout(function() {
+                        speakDefaultSummary(scrollToId);
+                    }, 1000); // wait for a second to speak out current position
+                }
+                setSpeakingAtId(scrollToId);
+            }
+        }
+
+        function toDoWhenPageLoaded() {
+            removeThisTagElement("table");
+            dropTopOfPageByHalf();
+            initZingTouch();
+            initHammer();
+            prepareOverviewData();
+            setInitialPosition();
+            displayMiddleBar();
+        }
+    </script>
+</body>
+
+</html>
