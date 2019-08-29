@@ -167,15 +167,18 @@
         function prepareOverviewData() {
             headerItemsMap.clear();
             
-            let audioSourcePrefix = "audio/overview/";
+            let audioSourcePrefix = "audio/";
             let audioSourceSuffix = ".mp3";
             for(let i=0; i<overviewContainerIds.length; i++) {
                 let overviewContainerId = overviewContainerIds[i];
-                let audSrc = audioSourcePrefix + overviewContainerId + audioSourceSuffix;
+                let audSrc;
+                audSrc = audioSourcePrefix + overviewContainerId + audioSourceSuffix;
+                if(overviewContainerId == "abstract_main") audSrc = overviewContainerId + audioSourceSuffix;
                 headerItemObject = new headerItems( audSrc, overviewContainerId);
                 headerItemsMap.set(overviewContainerId, headerItemObject);
             }
         }
+
         function navigateToArticle() {
             window.open("file:///android_asset/snapchat.html", "_self");
         }
@@ -203,7 +206,7 @@
             let audioPipeline = [];
             // push items in inverted order
             audioPipeline.push(itemData.audioSource);
-            audioPipeline.push(overviewInfodioFiles[3]); // "reading now" audio file
+            audioPipeline.push(earcons[READING_NOW]); // "reading now" audio file
             speakNow(audioPipeline, audioPipeline.length - 1);
         }
 
@@ -212,12 +215,13 @@
             let audioPipeline = [];
             // push items in inverted order
             audioPipeline.push(itemData.audioSource);
-            audioPipeline.push(earcons[SECTION_DELIM]);
-            if(isSection(currentPositionId)) {
-                // current selection is a section
-                speakNow(audioPipeline, audioPipeline.length - 1, false, 1.4);
-            }
-            else speakNow(audioPipeline, audioPipeline.length - 1, true, 0.4);
+            //audioPipeline.push(earcons[SECTION_DELIM]);
+            speakNow(audioPipeline, audioPipeline.length - 1);
+            // if(isSection(currentPositionId)) {
+            //     // current selection is a section
+            //     speakNow(audioPipeline, audioPipeline.length - 1, false, 1.4);
+            // }
+            // else speakNow(audioPipeline, audioPipeline.length - 1, true, 0.4);
         }
 
         function speakDefaultSummary(currentPositionId) {
@@ -266,10 +270,13 @@
                 if(isSpeaking()) pauseSpeaking();
                 //setSelectionSuccessEarcon();
                 setOpenSuccessEarcon();
-                localStorage.setItem(OVERVIEW_REQUEST_ID, getSpeakingAtId());
+                let readingRequestId = getSpeakingAtId();
+                if(readingRequestId == "abstract_main") readingRequestId = "abstract_para1";
+                else if(readingRequestId == "overviewhighlight") readingRequestId = "journaltitleId";
+                localStorage.setItem(OVERVIEW_REQUEST_ID, readingRequestId);
                 setTimeout(function() {
                     navigateToArticle();
-                }, 500);
+                }, 300);
             }
         }
 
@@ -495,8 +502,12 @@
                 console.log('X:' + ev.center.x + ", Y:" + ev.center.y);
                 let timeToInterval = 500 - ev.deltaTime;
                 pressInterval = setTimeout(function() {
-                    modulateEarcon(earcons[OPEN_SUCCESS], 1.0);
-                    requestSpeakNow();
+                    //modulateEarcon(earcons[OPEN_SUCCESS], 1.0);
+                    if(isSpeaking()) {
+                        Android.vibrateOnce();
+                        requestSpeakNow();
+                    }
+                    
                 }, timeToInterval);
             });
 
@@ -537,14 +548,13 @@
             let scrollToId = null;
             if(typeof(Storage) !== "undefined") {
                 if(localStorage.getItem(OVERVIEW_REQUEST_ID)) {
-                    //setOpenSuccessEarcon();
-                    setSelectionSuccessEarcon();
+                    
                     scrollToId = localStorage.getItem(OVERVIEW_REQUEST_ID);
-                    console.log(scrollToId);
+                    //console.log(scrollToId);
                     scrollElementToCenter(document.getElementById(scrollToId));
                     setTimeout(function() {
                         speakCurrentReadingPositionFromArticle(scrollToId);
-                    }, 700); // wait for some time to speak out current position
+                    }, 300); // wait for some time to speak out current position
                 }
                 else {
                     // scroll to highlights
@@ -553,7 +563,7 @@
                     scrollElementToCenter(document.getElementById(scrollToId));
                     setTimeout(function() {
                         speakDefaultSummary(scrollToId);
-                    }, 1000); // wait for a second to speak out current position
+                    }, 300); // wait for a second to speak out current position
                 }
                 setSpeakingAtId(scrollToId);
             }
@@ -565,6 +575,7 @@
             initZingTouch();
             initHammer();
             prepareOverviewData();
+            modulateEarcon(earcons[BUBBLING_UP], 1.0);
             setInitialPosition();
             displayMiddleBar();
         }

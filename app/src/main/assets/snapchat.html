@@ -179,12 +179,20 @@
             if(localStorage.getItem(OVERVIEW_REQUEST_ID)) {
                 // there is a request from overview page
                 let containerIdRequested = localStorage.getItem(OVERVIEW_REQUEST_ID);
+                
                 let playObjRequested = getPlayFromContainerId(containerIdRequested); 
-                readingElementId = playObjRequested.startId;
-                scrollElementToCenter(document.getElementById(readingElementId));
+                if(containerIdRequested == "abstract_para1") {
+                    readingElementId = playObjRequested.startId;
+                    scrollElementToCenter(document.getElementById(readingElementId));
+                    playObjRequested = getPlayFromPlayList(playObjRequested.playSerial - 1);
+                }
+                else {
+                    readingElementId = playObjRequested.startId;
+                    scrollElementToCenter(document.getElementById(readingElementId));
+                }
                 localStorage.removeItem(OVERVIEW_REQUEST_ID);
                 updatePlaybackStatus(PLAYING);
-                playAudio();
+                startPlayback
             }
             else {
                 // system is loading for the first time
@@ -354,7 +362,6 @@
             if(mediaType == "IMAGE" || mediaType == "TABLE") {
                 if(mediaObject.isCaption) {
                     //end of figure/table captions, resume to main content
-                    Android.vibrateOnce();
                     mediaObject.isCaption = false;
                     // nextMediaObject = getPlayFromPlayList(currentPlayIndex);
                     // nextStartId = mediaObject.resumeId;
@@ -388,13 +395,12 @@
     function storeBeforePause(overview) {
         let audioElement = document.getElementById('contentAudio');
         let elementIdStoring = null;
+        let currentPlayingObject = getPlayFromPlayList(currentPlayIndex);
         if(currentElementId) {
             elementIdStoring = currentElementId;
             setReadingElementId(currentElementId);
-            
         }
         else {
-            let currentPlayingObject = getPlayFromPlayList(currentPlayIndex);
             let wordList = currentPlayingObject.wordList;
             let timeNow = audioElement.currentTime;
             let left = 0;
@@ -416,9 +422,17 @@
             
         }
         if(overview) {
-            let containerId = getContainerId(document.getElementById(elementIdStoring));
-            let superContainerId = getSuperContainerId(containerId);
-            localStorage.setItem(OVERVIEW_REQUEST_ID, superContainerId);
+            if(elementIdStoring) {
+                let containerId = getContainerId(document.getElementById(elementIdStoring));
+                let superContainerId = getSuperContainerId(containerId);
+                if(currentPlayingObject.type == ANNOUNCEMENT) {
+                    if(currentPlayingObject.audioSource == "audio/abstract_main.mp3") superContainerId = "abstract_main";
+                    else superContainerId = currentPlayingObject.containerId;
+                }
+                else if(containerId == "abstract_para1") superContainerId = "abstract_main";
+                else if(containerId == journaltitleId || containerId == wherePublishedId) superContainerId = "overviewhighlight";
+                localStorage.setItem(OVERVIEW_REQUEST_ID, superContainerId);
+            }
     
         }
         return elementIdStoring;
@@ -629,7 +643,7 @@
         //Android.vibrateInPattern1();
         if(currentPlayIndex > -1) {
             if(isPlaying()) {
-                updatePlaybackStatus(PAUSED);
+                updatePlaybackStatus(STOPPED);
                 pauseAudio();
             }
             storeBeforePause(true);
@@ -1308,7 +1322,7 @@
                 }
                 else if(isRightPoolMax()) {
                     // confirmed movement in right
-                
+                    navigateToOverviewPage();
                 }
                 else if(isUpPoolMax()) {
                     //navigationRequest("UP");
@@ -1440,8 +1454,11 @@
                 console.log('X:' + ev.center.x + ", Y:" + ev.center.y);
                 let timeToInterval = 500 - ev.deltaTime;
                 pressInterval = setTimeout(function() {
-                    modulateEarcon(earcons[OPEN_SUCCESS], 1.0);
-                    requestPlayPause();
+                    //modulateEarcon(earcons[OPEN_SUCCESS], 1.0);
+                    if(isPlaying()) {
+                        Android.vibrateOnce();                 
+                        requestPlayPause();
+                    }
                 }, timeToInterval);
             });
 
