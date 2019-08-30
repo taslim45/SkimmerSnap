@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
 
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         WebView chiWeb = new WebView(this);
-        chiWeb.loadUrl("file:///android_asset/snapchat.html");
+        chiWeb.loadUrl("file:///android_asset/snapoverview.html");
         chiWeb.getSettings().setMediaPlaybackRequiresUserGesture(false);
         chiWeb.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         chiWeb.getSettings().setDomStorageEnabled(true);

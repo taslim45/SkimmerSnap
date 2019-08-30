@@ -107,9 +107,9 @@
             color: white;
         }
 
-        #topnavbar {
+        #bottomnavbar {
             position: fixed;
-            top: 0;
+            bottom: 0;
             left: 0;
             z-index: 999;
             width: 100vw;
@@ -125,7 +125,7 @@
             padding: 10px 24px; 
             cursor: pointer; 
             float: left; 
-            font-size: 13px;
+            font-size: 15px;
             border-top: none;
             border-right: none;
             border-left: none;
@@ -142,9 +142,9 @@
             border-top: none;
             border-right: none;
             border-left: none;
-            border-bottom-style: solid;
-            border-bottom-color: #3366cc;
-            border-bottom-width: 4px;
+            border-top-style: solid;
+            border-top-color: #3366cc;
+            border-top-width: 2px;
             margin: 0px 0px 0.01px 0px;
         }
 
@@ -167,6 +167,7 @@
     let startPosId = null;
     let playbackstatus = STOPPED;
     let readingElementId = null;
+    let globalSpeechRate = 1.0;
     let lastMediaObject = null;
     let delayAndStackRequest = false;
     let visualStatusManager = function(state, sentenceWithVisual) {
@@ -183,16 +184,18 @@
                 let playObjRequested = getPlayFromContainerId(containerIdRequested); 
                 if(containerIdRequested == "abstract_para1") {
                     readingElementId = playObjRequested.startId;
-                    scrollElementToCenter(document.getElementById(readingElementId));
+                    document.getElementById(readingElementId).scrollIntoView();
+                    //scrollElementToCenter(document.getElementById(readingElementId));
                     playObjRequested = getPlayFromPlayList(playObjRequested.playSerial - 1);
                 }
                 else {
                     readingElementId = playObjRequested.startId;
-                    scrollElementToCenter(document.getElementById(readingElementId));
+                    document.getElementById(readingElementId).scrollIntoView();
+                    //scrollElementToCenter(document.getElementById(readingElementId));
                 }
                 localStorage.removeItem(OVERVIEW_REQUEST_ID);
                 updatePlaybackStatus(PLAYING);
-                startPlayback
+                startPlayback(playObjRequested, playObjRequested.startId, 0);
             }
             else {
                 // system is loading for the first time
@@ -233,6 +236,7 @@
             lastMediaObject = mediaObject;
             clearSentenceProcessor();
             clearVisuals();
+            globalSpeechRate = 1.0;
             delayAndStackRequest = false;
             //clearDiscourseQueue();
             if(isFigureFabDisplayed()) {
@@ -252,7 +256,7 @@
         if(mediaType == "IMAGE" || mediaType == "TABLE") {
             // treat as referenced image or table
             cancelMiddleBar();
-            scrollElementToCenter(document.getElementById(startElementId));
+            scrollFigureToView(document.getElementById(startElementId));
             freezeAutoScroll();
             document.body.style.overflow = '';
             if(mediaObject.isCaption) {
@@ -270,6 +274,7 @@
                 mediaSentenceList = mediaObject.announcementSentenceList;
             }
             mediaSpeechRate = mediaObject.speechRate;
+            if(globalSpeechRate != 1.0) mediaSpeechRate = globalSpeechRate;
         }
         else {
             // it is a regular play object
@@ -291,6 +296,7 @@
             }
             mediaSpeechRate = mediaObject.speechRate;
             mediaSource = mediaObject.audioSource;
+            if(globalSpeechRate != 1.0) mediaSpeechRate = globalSpeechRate;
             
         }
 
@@ -314,15 +320,24 @@
         else {
             setTimeout(function() {
                 contentAudioElm.play();
+                
+                if(discourseRequest) {
+                    let whentostop = (discourseEndTime - startingTime) * 1000;
+                    setTimeout(function() {
+                        contentAudioElm.pause();
+                        updatePlaybackStatus(STOPPED);
+                        setReadingElementId(getTopDiscourse().sentenceStartId);
+                    }, whentostop);
+                }
             }, COOLING_TIME);
         }
 
         contentAudioElm.ontimeupdate = function() {
-            if(discourseRequest && contentAudioElm.currentTime >= (discourseEndTime - 0.1) && contentAudioElm.currentTime <= (discourseEndTime + 0.2)) {
-                setReadingElementId(getTopDiscourse().sentenceStartId);
-                updatePlaybackStatus(STOPPED);
-                pauseAudio();
-            }
+            // if(discourseRequest && contentAudioElm.currentTime >= (discourseEndTime - 0.1) && contentAudioElm.currentTime <= (discourseEndTime + 0.2)) {
+            //     setReadingElementId(getTopDiscourse().sentenceStartId);
+            //     updatePlaybackStatus(STOPPED);
+            //     pauseAudio();
+            // }
 
             if(mediaContainerId.length > 0) {
                 currentElementId = highlightText(contentAudioElm.currentTime, mediaWordList, mediaSentenceList);
@@ -430,7 +445,7 @@
                     else superContainerId = currentPlayingObject.containerId;
                 }
                 else if(containerId == "abstract_para1") superContainerId = "abstract_main";
-                else if(containerId == journaltitleId || containerId == wherePublishedId) superContainerId = "overviewhighlight";
+                else if(containerId == "journaltitleId" || containerId == "wherePublishedId") superContainerId = "overviewhighlight";
                 localStorage.setItem(OVERVIEW_REQUEST_ID, superContainerId);
             }
     
@@ -648,7 +663,7 @@
             }
             storeBeforePause(true);
         }
-        window.open("file:///android_asset/lightbeeOverview.html", "_self");
+        window.open("file:///android_asset/snapoverview.html", "_self");
 
     }
 
@@ -704,6 +719,7 @@
             notifySpeechRateChange(currentRate);
         }
         cntAudioElm.playbackRate = currentRate;
+        globalSpeechRate = currentRate;
     }
 
     function metaDiscourseJump(status) {
@@ -762,10 +778,10 @@
 <body id="main" onload="toDoWhenPageLoaded()">
     <audio id="contentAudio"><source type="audio/mpeg"></audio>
     <audio id="readingnowAudio"><source type="audio/mpeg"></audio>
-    <div id="topnavbar">
+    <div id="bottomnavbar">
         <div class="btn-group">
             <button onclick="navigateToOverviewPage()" id="overviewbutton">Overview</button>
-            <button class="active" onclick="requestArticle()" id="playpausebutton">
+            <button class="active" id="articlebutton">
                 Article
             </button>
         </div>
@@ -805,8 +821,7 @@
                 <p id="sec1_main_para1">Online sociotechnical platforms, such as Facebook, Twitter, and Snapchat, are driven by content that is created and shared by their users. This content enables people to explore the world and learn from one another. User decisions to publicly share content online are likely nuanced and determined by many factors, including context. The rise of handheld devices enables people to share content whenever and wherever. This means that their context, such as where they are and what they are doing, is constantly changing. Prior research has found that user motivations for sharing content on public platforms range from wanting to share knowledge with others to desiring to earn rewards&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0009">9</a>, <a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0013">13</a>]. However, people also have a wide range of concerns in sharing content, especially in public settings. For example, sharing personal photos and videos could reveal sensitive information, including where an individual lives. Such concerns have been widely studied through sharing decisions on social media websites (e.g.,&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0001">1</a>, <a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0014">14</a>, <a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0019">19</a>]).</p>
                 <p id="sec1_main_para2">In this paper, we study Snapchat, a highly popular multimedia messaging application which launched in 2011. The app first started as a means for users to directly exchange photos, called Snaps, that disappear after they are viewed by the recipient&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0033">33</a>]. Snapchat now has the <em>My Story</em> and <em>Our Story</em> features that allow users to share ephemeral photos and videos with a broader audience. While Snaps shared to <em>My Story</em> can, by default, only be accessed by a user&#x0027;s Snapchat friends, those shared to <em>Our Story</em> are anonymous but viewable by anyone using Snapchat&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0031">31</a>, <a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0032">32</a>].</p>
                 <p id="sec1_main_para3">In prior work, Snapchat has not been studied as extensively as other content sharing platforms, such as Facebook and Twitter. As the landscape of content sharing changes, it is important to continuously assess both user motivations and considerations in sharing content, especially for unique ecosystems such as Snapchat. In contrast to many other sharing platforms, content production on Snapchat occurs solely via a handheld device, and thus the context in which users share content is dynamic. Additionally, Snapchat is used primarily to exchange multimedia content which may have a different level of privacy sensitivity than text content. Lastly, with the default settings, Snapchat users can choose between three audience types for each of their Snaps: one or more Snapchat friends, all of their Snapchat friends via <em>My Story</em>, or the entire Snapchat user base via <em>Our Story</em>. Recent work has found that both ephemerality of content and audience control impact the perceived appropriateness of content sharing&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0027">27</a>]. Recent work has demonstrated that both the ephemerality of content and audience control can impact a user&#x0027;s decision to share. Thus user considerations in publicly sharing to <em>Our Story</em> may differ from those found by prior work which studied other public sharing platforms&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0001">1</a>, <a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0011">11</a>, <a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0029">29</a>].</p>
-                <p id="sec1_main_para4">To extend the literature on Snapchat, and social sharing behavior more generally, we conducted an online survey of over 1,500 Snapchat users. Our study explored two key research questions: (1) What role does context play in sharing decisions? (2) What are users&#x2019; motivations and considerations when publicly sharing content?</p>
-                <p id="sec1_main_para5">In our survey, we examined whether Snaps shared to <em>My Story</em> differ contextually from those shared to <em>Our Story</em>, how context relates to participants&#x2019; comfort levels with past and future sharing of public content, and the reasons participants chose to share or not share to <em>Our Story</em> in the past. Specifically, we considered the role of four &#x201C;primary context types&#x201D; defined by Dey et al.: <em>identity</em>, <em>activity</em>, <em>location</em>, and <em>time</em>&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0010">10</a>]. As Figure&#x00A0;<a class="fig" href="#fig1">1</a> demonstrates, these four attributes can be used to capture the context of any Snap.
+                <p id="sec1_main_para4">To extend the literature on Snapchat, and social sharing behavior more generally, we conducted an online survey of over 1,500 Snapchat users. Our study explored two key research questions: (1) What role does context play in sharing decisions? (2) What are users&#x2019; motivations and considerations when publicly sharing content?
                     <figure id="fig1"> 
                         <img src="img/fig1.jpg" class="img-responsive" alt="" longdesc="Examples of a public context, such as a beach, and a private context, such as a workplace." />
                         <div class="figure-caption"> 
@@ -815,6 +830,7 @@
                         </div>
                     </figure>
                 </p>
+                <p id="sec1_main_para5">In our survey, we examined whether Snaps shared to <em>My Story</em> differ contextually from those shared to <em>Our Story</em>, how context relates to participants&#x2019; comfort levels with past and future sharing of public content, and the reasons participants chose to share or not share to <em>Our Story</em> in the past. Specifically, we considered the role of four &#x201C;primary context types&#x201D; defined by Dey et al.: <em>identity</em>, <em>activity</em>, <em>location</em>, and <em>time</em>&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0010">10</a>]. As Figure&#x00A0;<a class="fig" href="#fig1">1</a> demonstrates, these four attributes can be used to capture the context of any Snap.</p>
                 <p id="sec1_main_para6">We found that, overall, each contextual factor we examined played a role in public sharing behavior on Snapchat. With respect to motivations, participants primarily stated intrinsic reasons for sharing to <em>Our Story</em>, such as the desire to share an experience with the world or have fun. Considerations in public sharing included the audience and content of the Snap. Regarding identity, those who identified as male or a racial minority were more likely to have shared to <em>Our Story</em> in the past. Additionally, we found that the activity captured by Snaps shared to <em>My Story</em> was significantly different than those shared to <em>Our Story</em>. For example, proportionally four times as many Snaps shared to <em>Our Story</em> were taken while attending an event. Similarly, users differentiated between public and private locations, as the majority of <em>My Story</em> Snaps were reported to be taken at home. Related to time, participants reported that they would be more comfortable publicly sharing Snaps to <em>Our Story</em> that were taken in the afternoon or evening, compared to morning or late night.</p>
                 <p id="sec1_main_para7">Overall, our study highlights that the contextual factors we examined (identity, activity, location, and time) do play a role in public sharing decisions on Snapchat. Our findings related to the impact of context lend to implications for the design of content sharing platforms. System designs that are contextually aware may increase users&#x2019; comfort with their sharing decisions and be more respectful of their privacy.</p>
             </section>
@@ -1296,6 +1312,11 @@
             zt.bind(touchZone, zingPan, function(e) {
                 let panObj = e.detail.data[0];
                 if(!isTouchEnabled) return;
+                if(getPlaybackStatus()==STOPPED) {
+                    // user has stopped audio but moving, could mean wants to start from a new position
+                    setReadingElementId(null);
+                    return;
+                }
 
                 if(isPlaying()) {
                     freezeAutoScroll();
@@ -1315,6 +1336,7 @@
             var endPan = zingPan.end; 
             zingPan.end = function(ev) {
                 if(!isTouchEnabled) return;
+                if(getPlaybackStatus()==STOPPED) return;
                 
                 if(isLeftPoolMax()) {
                     // confirmed movement in left
@@ -1322,7 +1344,7 @@
                 }
                 else if(isRightPoolMax()) {
                     // confirmed movement in right
-                    navigateToOverviewPage();
+                    //navigateToOverviewPage();
                 }
                 else if(isUpPoolMax()) {
                     //navigationRequest("UP");
@@ -1445,7 +1467,9 @@
 
             mc.on("doubletap", function(ev) {
                 console.log('Type:' + ev.type);
-                
+                let tappedX = ev.center.x;
+                let tappedY = ev.center.y;
+                console.log(tappedX + ' ' + tappedY);
             });
             
             let pressInterval = null;
@@ -1506,15 +1530,17 @@
             bottomrightbox.id = 'bottomrightbox';
             topleftbox.style.width = toprighttbox.style.width = '' + window.innerWidth/2 + 'px';
             bottomleftbox.style.width = bottomrightbox.style.width = '' + (window.innerWidth * 0.50) + 'px';
-            topleftbox.style.top = toprighttbox.style.top = '' + document.getElementById('topnavbar').getBoundingClientRect().height + 'px';
+            topleftbox.style.top = toprighttbox.style.top = '0px';
             topleftbox.style.left = '0px';
             toprighttbox.style.right = '0px';
-            topleftbox.style.height = toprighttbox.style.height = bottomleftbox.style.height = bottomrightbox.style.height = '' + window.innerHeight * 0.25 + 'px';
-            bottomleftbox.style.bottom = bottomrightbox.style.bottom = '0px';
+            topleftbox.style.height = toprighttbox.style.height = '' + window.innerHeight * 0.25 + 'px';
+            bottomleftbox.style.height = bottomrightbox.style.height = '' + (window.innerHeight * 0.25 - document.getElementById('bottomnavbar').getBoundingClientRect().height) + 'px';
+            bottomleftbox.style.bottom = bottomrightbox.style.bottom = '' + document.getElementById('bottomnavbar').getBoundingClientRect().height + 'px';
             bottomleftbox.style.left = '0px';
             bottomrightbox.style.right = '0px';
-            topleftbox.style.border = toprighttbox.style.border = '1px solid green';
-            bottomleftbox.style.border = bottomrightbox.style.border = '1px solid purple';
+            topleftbox.style.border = toprighttbox.style.border = '2px dashed rgba(0, 255, 0, 0.3)';
+            topleftbox.style.borderColor
+            bottomleftbox.style.border = bottomrightbox.style.border = '2px dashed rgba(0, 204, 255, 0.3)';
             topleftbox.style.display = toprighttbox.style.display = bottomleftbox.style.display = bottomrightbox.style.display = 'block';
             topleftbox.style.position = toprighttbox.style.position = bottomleftbox.style.position = bottomrightbox.style.position = 'fixed';
 
@@ -1551,6 +1577,7 @@
         }
 
         function toDoWhenPageLoaded() {
+            //localStorage.removeItem(OVERVIEW_REQUEST_ID);
             removeThisTagElement("table");
             dropTopOfPageByHalf();
             initZingTouch();

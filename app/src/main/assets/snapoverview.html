@@ -93,9 +93,9 @@
             color: white;
         }
 
-        #topnavbar {
+        #bottomnavbar {
             position: fixed;
-            top: 0;
+            bottom: 0;
             left: 0;
             z-index: 999;
             width: 100vw;
@@ -111,7 +111,7 @@
             padding: 10px 24px; 
             cursor: pointer; 
             float: left; 
-            font-size: 13px;
+            font-size: 15px;
             border-top: none;
             border-right: none;
             border-left: none;
@@ -128,9 +128,9 @@
             border-top: none;
             border-right: none;
             border-left: none;
-            border-bottom-style: solid;
-            border-bottom-color: #3366cc;
-            border-bottom-width: 4px;
+            border-top-style: solid;
+            border-top-color: #3366cc;
+            border-top-width: 2px;
             margin: 0px 0px 0.01px 0px;
         }
 
@@ -173,7 +173,7 @@
                 let overviewContainerId = overviewContainerIds[i];
                 let audSrc;
                 audSrc = audioSourcePrefix + overviewContainerId + audioSourceSuffix;
-                if(overviewContainerId == "abstract_main") audSrc = overviewContainerId + audioSourceSuffix;
+                
                 headerItemObject = new headerItems( audSrc, overviewContainerId);
                 headerItemsMap.set(overviewContainerId, headerItemObject);
             }
@@ -305,10 +305,10 @@
 
 <body id="main" onload="toDoWhenPageLoaded()">
     <audio id="overviewAudio"><source type="audio/mpeg"><source type="audio/ogg"></audio>
-    <div id="topnavbar">
+    <div id="bottomnavbar">
         <div class="btn-group">
-            <button class="active" onclick="navigateToOverviewPage()" id="overviewbutton">Overview</button>
-            <button onclick="navigateToArticle()" id="playpausebutton">
+            <button class="active" id="overviewbutton">Overview</button>
+            <button onclick="processCurrentSelection()" id="playpausebutton">
                 Article
             </button>
         </div>
@@ -388,13 +388,16 @@
             var startPan = zingPan.start;
             zingPan.start = function(ev) {
                 console.log('pan started');
-                resetPools();
-                if(getSpeakingAtId()) lastSensed = document.getElementById(getSpeakingAtId());
+                console.log(ev);
+                //resetPools();
+                //if(getSpeakingAtId()) lastSensed = document.getElementById(getSpeakingAtId());
                 return startPan.call(this, ev);
             }
             
             zt.bind(touchZone, zingPan, function(e) {
                 let panObj = e.detail.data[0];
+
+                console.log('distance from origin:' + panObj.distanceFromOrigin + ' ' + 'direction from origin:' + panObj.directionFromOrigin + ' ' + 'current direction:' + panObj.currentDirection);
                 
                 if(isUP(panObj.currentDirection) || isDOWN(panObj.currentDirection)) {
                     //console.log('Its going UP or DOWN');
@@ -404,61 +407,61 @@
                     //console.log('Its going RIGHT or LEFT');
                 }
 
-                if(isUpPoolMax()) {
-                    direction = "UP";
-                    newlySensed = itemInTheMiddle();
-                    if(newlySensed && newlySensed != lastSensed) {
-                        lastSensed = newlySensed;
-                        setSpeakingAtId(lastSensed.id);
-                        speakNavigationChange(lastSensed.id);
-                    }
-                }
-                else if(isDownPoolMax()) {
-                    direction = "DOWN";
-                    newlySensed = itemInTheMiddle();
-                    if(newlySensed && newlySensed != lastSensed) {
-                        lastSensed = newlySensed;
-                        setSpeakingAtId(lastSensed.id);
-                        speakNavigationChange(lastSensed.id);
-                    }
-                }
+                // if(isUpPoolMax()) {
+                //     direction = "UP";
+                //     newlySensed = itemInTheMiddle();
+                //     if(newlySensed && newlySensed != lastSensed) {
+                //         lastSensed = newlySensed;
+                //         setSpeakingAtId(lastSensed.id);
+                //         speakNavigationChange(lastSensed.id);
+                //     }
+                // }
+                // else if(isDownPoolMax()) {
+                //     direction = "DOWN";
+                //     newlySensed = itemInTheMiddle();
+                //     if(newlySensed && newlySensed != lastSensed) {
+                //         lastSensed = newlySensed;
+                //         setSpeakingAtId(lastSensed.id);
+                //         speakNavigationChange(lastSensed.id);
+                //     }
+                // }
                 
             });
 
             var endPan = zingPan.end; 
             zingPan.end = function(ev) {
                 console.log('pan end');
-                
-                if(isLeftPoolMax()) {
-                    // confirmed movement in left
-                    console.log('Confirmed movement to the left');
-                    processCurrentSelection();
+                console.log(ev);
+                // if(isLeftPoolMax()) {
+                //     // confirmed movement in left
+                //     console.log('Confirmed movement to the left');
+                //     //processCurrentSelection();
                     
-                }
-                else if(isRightPoolMax()) {
-                    // confirmed movement in right
-                    console.log('Confirmed movement to the right');
+                // }
+                // else if(isRightPoolMax()) {
+                //     // confirmed movement in right
+                //     console.log('Confirmed movement to the right');
                     
-                }
-                else if(isUpPoolMax()) {
-                    //navigationRequest("UP");
-                    direction = "UP";
-                    console.log('Confirmed movement to Up');
-                    if(newlySensed) scrollElementToCenter(newlySensed);
-                }
-                else if(isDownPoolMax()) {
-                    //navigationRequest("DOWN");
-                    direction = "DOWN";
-                    console.log('Confirmed movement to Down');
-                    if(newlySensed) scrollElementToCenter(newlySensed);
-                }
+                // }
+                // else if(isUpPoolMax()) {
+                //     //navigationRequest("UP");
+                //     direction = "UP";
+                //     console.log('Confirmed movement to Up');
+                //     if(newlySensed) scrollElementToCenter(newlySensed);
+                // }
+                // else if(isDownPoolMax()) {
+                //     //navigationRequest("DOWN");
+                //     direction = "DOWN";
+                //     console.log('Confirmed movement to Down');
+                //     if(newlySensed) scrollElementToCenter(newlySensed);
+                // }
                 
                 return endPan.call(this,ev);
             }
 
             zt.bind(touchZone, zingSwipe, function(e) {
                 let swipeObj = e.detail.data[0];
-                //console.log(e.type + ', Velocity: ' + swipeObj.velocity + ', Direction: ' + swipeObj.currentDirection);
+                console.log(e.type + ', Velocity: ' + swipeObj.velocity + ', Direction: ' + swipeObj.currentDirection);
                 
             });
         }
@@ -488,12 +491,14 @@
 
 
             mc.on("singletap", function(ev) {
-                requestSpeakNow();
+                if(!isSpeaking()) {
+                    requestSpeakNow(); 
+                }
             });
 
             mc.on("doubletap", function(ev) {
                 console.log('Type:' + ev.type);
-                
+                processCurrentSelection();
             });
 
             let pressInterval = null;
@@ -550,6 +555,7 @@
                 if(localStorage.getItem(OVERVIEW_REQUEST_ID)) {
                     
                     scrollToId = localStorage.getItem(OVERVIEW_REQUEST_ID);
+                    localStorage.removeItem(OVERVIEW_REQUEST_ID);
                     //console.log(scrollToId);
                     scrollElementToCenter(document.getElementById(scrollToId));
                     setTimeout(function() {

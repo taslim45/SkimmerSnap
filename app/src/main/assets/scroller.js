@@ -67,3 +67,25 @@ function scrollElementToCenter(element) {
 function scrollDownExtra() {
     document.documentElement.scrollBy(0,-40);
 }
+
+function scrollFigureToView(element) {
+    if(isScrollLocked) return;
+    let currentScrollPosition = document.documentElement.scrollTop;
+    /*
+    *scrolling theory: 
+    1. first negate current scrolling to 0
+    2. find the element from top of the document, this will take the element to the top of the screen
+    3. now put the element to the middle of the screen
+    */
+    let targetYOfScreen = 0.60 * window.innerHeight;
+    let elementPositionWRTDocument = element.offsetTop;
+    if(element.offsetParent.tagName != "BODY") {
+        // the element's parent is not body, so its scrolling from top may change
+        parentElement = element.offsetParent;
+        elementPositionWRTDocument = parentElement.offsetTop + element.offsetTop;
+    }
+    document.documentElement.scrollBy( {
+        top: -currentScrollPosition + elementPositionWRTDocument - targetYOfScreen, 
+        left: 0,
+        behavior: 'smooth'});
+}
