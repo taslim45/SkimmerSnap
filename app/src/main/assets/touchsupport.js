@@ -1,7 +1,8 @@
-let UP_RIGHT_THRESHOLD = 40;
-let UP_LEFT_THRESHOLD = 140;
-let DOWN_RIGHT_THRESHOLD = 320;
-let DOWN_LEFT_THRESHOLD = 220;
+let UP_RIGHT_THRESHOLD = 30;
+let UP_LEFT_THRESHOLD = 150;
+let DOWN_RIGHT_THRESHOLD = 330;
+let DOWN_LEFT_THRESHOLD = 210;
+let HORIZONTAL_DRAG_THRESHOLD = 60;
 
 let upPool = 0;
 let downPool = 0;
@@ -12,9 +13,23 @@ function resetPools() {
     upPool = downPool = rightPool = leftPool = 0;
 }
 
+function processDirection(fromOrigin, currentDirection) {
+    if(isUP(fromOrigin) && isUP(currentDirection)) {
+        upPool++;
+    }
+    else if(isDOWN(fromOrigin) && isDOWN(currentDirection)) {
+        downPool++;
+    }
+    else if(isLEFT(fromOrigin) && isLEFT(currentDirection)) {
+        leftPool++;
+    }
+    else if(isRIGHT(fromOrigin) && isRIGHT(currentDirection)) {
+        rightPool++;
+    }
+}
+
 function isUP(angle) {
     if(angle > UP_RIGHT_THRESHOLD && angle <UP_LEFT_THRESHOLD) {
-        upPool++;
         return true;
     } 
     return false;
@@ -22,7 +37,6 @@ function isUP(angle) {
 
 function isDOWN(angle) {
     if(angle > DOWN_LEFT_THRESHOLD && angle < DOWN_RIGHT_THRESHOLD) {
-        downPool++;
         return true;
     }
     return false;
@@ -30,7 +44,6 @@ function isDOWN(angle) {
 
 function isRIGHT(angle) {
     if(angle > DOWN_RIGHT_THRESHOLD || angle < UP_RIGHT_THRESHOLD) {
-        rightPool++;
         return true;
     }
     return false;
@@ -38,7 +51,6 @@ function isRIGHT(angle) {
 
 function isLEFT(angle) {
     if(angle > UP_LEFT_THRESHOLD && angle < DOWN_LEFT_THRESHOLD) {
-        leftPool++;
         return true;
     }
     return false;

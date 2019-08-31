@@ -107,9 +107,9 @@
             color: white;
         }
 
-        #bottomnavbar {
+        #topnavbar {
             position: fixed;
-            bottom: 0;
+            top: 0;
             left: 0;
             z-index: 999;
             width: 100vw;
@@ -142,9 +142,9 @@
             border-top: none;
             border-right: none;
             border-left: none;
-            border-top-style: solid;
-            border-top-color: #3366cc;
-            border-top-width: 2px;
+            border-bottom-style: solid;
+            border-bottom-color: #3366cc;
+            border-bottom-width: 4px;
             margin: 0px 0px 0.01px 0px;
         }
 
@@ -175,6 +175,9 @@
         this.sentenceWithVisual = sentenceWithVisual;
     }
     let vsManager = null;
+    let pageLocation = 'snapchat.html';
+    let playheadLocationChanged = true;
+
     function checkStorage() {
         if(typeof(Storage) !== "undefined") {
             if(localStorage.getItem(OVERVIEW_REQUEST_ID)) {
@@ -184,14 +187,16 @@
                 let playObjRequested = getPlayFromContainerId(containerIdRequested); 
                 if(containerIdRequested == "abstract_para1") {
                     readingElementId = playObjRequested.startId;
-                    document.getElementById(readingElementId).scrollIntoView();
+                    window.location.href = pageLocation + '#' + containerIdRequested;
+                    //document.getElementById(readingElementId).scrollIntoView();
                     //scrollElementToCenter(document.getElementById(readingElementId));
                     playObjRequested = getPlayFromPlayList(playObjRequested.playSerial - 1);
                 }
                 else {
                     readingElementId = playObjRequested.startId;
-                    document.getElementById(readingElementId).scrollIntoView();
+                    //document.getElementById(readingElementId).scrollIntoView();
                     //scrollElementToCenter(document.getElementById(readingElementId));
+                    window.location.href = pageLocation + '#' + containerIdRequested;
                 }
                 localStorage.removeItem(OVERVIEW_REQUEST_ID);
                 updatePlaybackStatus(PLAYING);
@@ -251,7 +256,7 @@
         let mediaContainerId = '';
         let mediaWordList, mediaSentenceList;
         let mediaSpeechRate = 1.0;
-        
+        playheadLocationChanged = false;
         clearScreen();
         if(mediaType == "IMAGE" || mediaType == "TABLE") {
             // treat as referenced image or table
@@ -723,54 +728,63 @@
     }
 
     function metaDiscourseJump(status) {
-        let playingIndex = getCurrentPlayIndex();
+        let playingIndex;
+        let currentPlayingId;
         let playingObject;
         let cntAudioElm = document.getElementById('contentAudio');
-        let whereToStartId = null;
-        if(playingIndex < 0) {
-            // start from abstract
+        let playingTime;
 
+        if(getPlaybackStatus() == PLAYING) {
+            console.log('playing');
+            playingIndex = getCurrentPlayIndex();
+            playingTime = cntAudioElm.currentTime;
+            playingObject = getPlayFromPlayList(playingIndex);
         }
         else {
-            // something is playing
-            playingObject = getPlayFromPlayList(playingIndex);
-            if(status) {
-                // moving forward
-                let discourse = getNextMetaDiscourse(cntAudioElm.currentTime, playingObject);
-                if(discourse == null) {
-                    playingIndex = playingObject.playSerial + 1;
-                    playingObject = getPlayFromPlayList(playingIndex);
-                    while(playingObject.type != MAIN) {
-                        playingIndex++;
-                        playingObject = getPlayFromPlayList(playingIndex);
-                    }
-                    
-                    if(playingObject.discourseList.length > 0) {
-                        discourse = playingObject.discourseList[0];
-                    }
-                }
-                saveDiscourseForDetails(discourse);
-                startPlayback(playingObject, discourse.startId, discourse.startTime, true, discourse.endTime);
+            console.log('stopped');
+            if(playheadLocationChanged) {
+                currentPlayingId = senseLine();
+                if(currentPlayingId == null) {
+                    currentPlayingId = elementAtCenterPointer();
+                } 
+                console.log(currentPlayingId);
+                playingTime = getWordTimestamp(document.getElementById(currentPlayingId));
+                playingObject = getPlayFromContainerId(getContainerId(document.getElementById(currentPlayingId)));
+                playingIndex = playingObject.playSerial;
             }
             else {
-                // moving back
-                let discourse = getPrevMetaDiscourse(cntAudioElm.currentTime, playingObject);
-                if(discourse == null) {
-                    playingIndex = playingObject.playSerial - 1;
-                    playingObject = getPlayFromPlayList(playingIndex);
-                    while(playingObject.type != MAIN) {
-                        playingIndex--;
-                        playingObject = getPlayFromPlayList(playingIndex);
-                    }
-                    
-                    if(playingObject.discourseList.length > 0) {
-                        discourse = playingObject.discourseList[playingObject.discourseList.length - 1];
-                    }
-                }
+                playingIndex = getCurrentPlayIndex();
+                playingTime = cntAudioElm.currentTime;
+                playingObject = getPlayFromPlayList(playingIndex);
+            }
+        }
+        
+        
+        if(status) {
+            // moving forward
+            let discourse = getNextMetaDiscourse(cntAudioElm.currentTime, playingObject);
+            console.log(discourse);
+            if(discourse) {
+                playingObject = getPlayFromContainerId(getContainerId(document.getElementById(discourse.startId)));
                 saveDiscourseForDetails(discourse);
                 startPlayback(playingObject, discourse.startId, discourse.startTime, true, discourse.endTime);
             }
         }
+        else {
+            // moving back
+            let discourse = getPrevMetaDiscourse(cntAudioElm.currentTime, playingObject);
+            console.log(discourse);
+            if(discourse) {
+                playingObject = getPlayFromContainerId(getContainerId(document.getElementById(discourse.startId)));
+                saveDiscourseForDetails(discourse);
+                startPlayback(playingObject, discourse.startId, discourse.startTime, true, discourse.endTime);    
+            }   
+        }
+    }
+
+    function onPlayheadLocationChangeListener() {
+        console.log('play head location has changed');
+        playheadLocationChanged = true;
     }
 </script>
 </head>
@@ -778,7 +792,7 @@
 <body id="main" onload="toDoWhenPageLoaded()">
     <audio id="contentAudio"><source type="audio/mpeg"></audio>
     <audio id="readingnowAudio"><source type="audio/mpeg"></audio>
-    <div id="bottomnavbar">
+    <div id="topnavbar">
         <div class="btn-group">
             <button onclick="navigateToOverviewPage()" id="overviewbutton">Overview</button>
             <button class="active" id="articlebutton">
@@ -1283,7 +1297,7 @@
         let upperY = window.innerHeight * 0.25;
         let lowerY = window.innerHeight * 0.75;
         let midX = window.innerWidth * 0.50;
-
+        let lastDistanceFromOrigin = 0;
         let isTouchEnabled = true;
 
         function initZingTouch() {
@@ -1305,30 +1319,21 @@
                 inSwipeBounds = false;
                 // initOrClearSensingQueue();
                 resetPools();
-                
+                lastDistanceFromOrigin = 0;
                 return startPan.call(this, ev);
             }
             
             zt.bind(touchZone, zingPan, function(e) {
                 let panObj = e.detail.data[0];
                 if(!isTouchEnabled) return;
-                if(getPlaybackStatus()==STOPPED) {
-                    // user has stopped audio but moving, could mean wants to start from a new position
-                    setReadingElementId(null);
-                    return;
-                }
+                
+                lastDistanceFromOrigin = panObj.distanceFromOrigin;
+                processDirection(panObj.directionFromOrigin, panObj.currentDirection);
 
                 if(isPlaying()) {
                     freezeAutoScroll();
                     pauseAudio();
-                }
-
-                if(isUP(panObj.currentDirection) || isDOWN(panObj.currentDirection)) {
-                    //console.log('Its going UP or DOWN');
-                    
-                }
-                else if(isRIGHT(panObj.currentDirection) || isLEFT(panObj.currentDirection)) {
-                    //console.log('Its going RIGHT or LEFT');
+                    updatePlaybackStatus(PAUSED);
                 }
                 
             });
@@ -1336,47 +1341,51 @@
             var endPan = zingPan.end; 
             zingPan.end = function(ev) {
                 if(!isTouchEnabled) return;
-                if(getPlaybackStatus()==STOPPED) return;
                 
                 if(isLeftPoolMax()) {
                     // confirmed movement in left
                     
                 }
-                else if(isRightPoolMax()) {
+                else if(isRightPoolMax() && lastDistanceFromOrigin > HORIZONTAL_DRAG_THRESHOLD) {
                     // confirmed movement in right
-                    //navigateToOverviewPage();
+                    navigateToOverviewPage();
                 }
                 else if(isUpPoolMax()) {
                     //navigationRequest("UP");
-                    direction = "UP";
-                    
-                    setTimeout(function() {
-                        
-                        if(inSwipeBounds) {
-                            document.body.style.overflow = '';
-                            paragraphJump(direction);
-                            zt.preventDefault = false;
-                        }
-                        else {
-                            drag();
-                        }
-                    }, 100);
+                    if(getPlaybackStatus() == STOPPED) {
+                        onPlayheadLocationChangeListener();
+                    }
+                    else {
+                        setTimeout(function() {
+                            if(inSwipeBounds) {
+                                document.body.style.overflow = '';
+                                paragraphJump(direction);
+                                zt.preventDefault = false;
+                            }
+                            else {
+                                drag();
+                            }
+                        }, 100);
+                    }                    
                     
                 }
                 else if(isDownPoolMax()) {
-                    //navigationRequest("DOWN");
-                    direction = "DOWN";
                     
-                    setTimeout(function() {
-                        if(inSwipeBounds) {
-                            document.body.style.overflow = '';
-                            paragraphJump(direction);
-                            zt.preventDefault = false;
-                        }
-                        else {
-                            drag();
-                        }
-                    }, 100);
+                    if(getPlaybackStatus() == STOPPED) {
+                        onPlayheadLocationChangeListener();
+                    }
+                    else {
+                        setTimeout(function() {
+                            if(inSwipeBounds) {
+                                document.body.style.overflow = '';
+                                paragraphJump(direction);
+                                zt.preventDefault = false;
+                            }
+                            else {
+                                drag();
+                            }
+                        }, 100);
+                    }
                 }
                 
                 return endPan.call(this,ev);
@@ -1466,28 +1475,28 @@
             });
 
             mc.on("doubletap", function(ev) {
-                console.log('Type:' + ev.type);
+                
                 let tappedX = ev.center.x;
                 let tappedY = ev.center.y;
-                console.log(tappedX + ' ' + tappedY);
+                
             });
             
             let pressInterval = null;
             mc.on('press', function(ev) {
-                console.log('' + ev.type + ' time:' + ev.deltaTime);
-                console.log('X:' + ev.center.x + ", Y:" + ev.center.y);
+                let tappedX = ev.center.x;
+                let tappedY = ev.center.y;
+
                 let timeToInterval = 500 - ev.deltaTime;
-                pressInterval = setTimeout(function() {
-                    //modulateEarcon(earcons[OPEN_SUCCESS], 1.0);
-                    if(isPlaying()) {
+
+                if(tappedY > upperY && tappedY < lowerY && isPlaying()) {
+                    pressInterval = setTimeout(function() {
                         Android.vibrateOnce();                 
                         requestPlayPause();
-                    }
-                }, timeToInterval);
+                    }, timeToInterval);
+                }
             });
 
             mc.on('pressup', function(ev) {
-                console.log('' + ev.type + ' time:' + ev.deltaTime);
                 
                 if(pressInterval) clearTimeout(pressInterval);
             });
@@ -1530,16 +1539,16 @@
             bottomrightbox.id = 'bottomrightbox';
             topleftbox.style.width = toprighttbox.style.width = '' + window.innerWidth/2 + 'px';
             bottomleftbox.style.width = bottomrightbox.style.width = '' + (window.innerWidth * 0.50) + 'px';
-            topleftbox.style.top = toprighttbox.style.top = '0px';
+            topleftbox.style.top = toprighttbox.style.top = '' + document.getElementById('topnavbar').getBoundingClientRect().height + 'px';
             topleftbox.style.left = '0px';
             toprighttbox.style.right = '0px';
-            topleftbox.style.height = toprighttbox.style.height = '' + window.innerHeight * 0.25 + 'px';
-            bottomleftbox.style.height = bottomrightbox.style.height = '' + (window.innerHeight * 0.25 - document.getElementById('bottomnavbar').getBoundingClientRect().height) + 'px';
-            bottomleftbox.style.bottom = bottomrightbox.style.bottom = '' + document.getElementById('bottomnavbar').getBoundingClientRect().height + 'px';
+            topleftbox.style.height = toprighttbox.style.height = '' + (window.innerHeight * 0.25 - document.getElementById('topnavbar').getBoundingClientRect().height) + 'px';
+            bottomleftbox.style.height = bottomrightbox.style.height = '' + window.innerHeight * 0.25 + 'px';
+            bottomleftbox.style.bottom = bottomrightbox.style.bottom = '0px';
             bottomleftbox.style.left = '0px';
             bottomrightbox.style.right = '0px';
             topleftbox.style.border = toprighttbox.style.border = '2px dashed rgba(0, 255, 0, 0.3)';
-            topleftbox.style.borderColor
+            
             bottomleftbox.style.border = bottomrightbox.style.border = '2px dashed rgba(0, 204, 255, 0.3)';
             topleftbox.style.display = toprighttbox.style.display = bottomleftbox.style.display = bottomrightbox.style.display = 'block';
             topleftbox.style.position = toprighttbox.style.position = bottomleftbox.style.position = bottomrightbox.style.position = 'fixed';

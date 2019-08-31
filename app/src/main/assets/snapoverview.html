@@ -93,9 +93,9 @@
             color: white;
         }
 
-        #bottomnavbar {
+        #topnavbar {
             position: fixed;
-            bottom: 0;
+            top: 0;
             left: 0;
             z-index: 999;
             width: 100vw;
@@ -128,9 +128,9 @@
             border-top: none;
             border-right: none;
             border-left: none;
-            border-top-style: solid;
-            border-top-color: #3366cc;
-            border-top-width: 2px;
+            border-bottom-style: solid;
+            border-bottom-color: #3366cc;
+            border-bottom-width: 4px;
             margin: 0px 0px 0.01px 0px;
         }
 
@@ -305,7 +305,7 @@
 
 <body id="main" onload="toDoWhenPageLoaded()">
     <audio id="overviewAudio"><source type="audio/mpeg"><source type="audio/ogg"></audio>
-    <div id="bottomnavbar">
+    <div id="topnavbar">
         <div class="btn-group">
             <button class="active" id="overviewbutton">Overview</button>
             <button onclick="processCurrentSelection()" id="playpausebutton">
@@ -372,6 +372,7 @@
         let direction = null;
         let lastSensed = null;
         let newlySensed = null;
+        let lastDistanceFromOrigin = 0;
         function initZingTouch() {
             zt = new ZingTouch.Region(touchZone, true, false);
             // Region(element, [whether the region listens for captures or bubbles], [prevent default])
@@ -388,43 +389,46 @@
             var startPan = zingPan.start;
             zingPan.start = function(ev) {
                 console.log('pan started');
-                console.log(ev);
-                //resetPools();
-                //if(getSpeakingAtId()) lastSensed = document.getElementById(getSpeakingAtId());
+                // console.log(ev);
+                resetPools();
+                lastDistanceFromOrigin = 0;
+                if(getSpeakingAtId()) lastSensed = document.getElementById(getSpeakingAtId());
                 return startPan.call(this, ev);
             }
             
             zt.bind(touchZone, zingPan, function(e) {
                 let panObj = e.detail.data[0];
 
-                console.log('distance from origin:' + panObj.distanceFromOrigin + ' ' + 'direction from origin:' + panObj.directionFromOrigin + ' ' + 'current direction:' + panObj.currentDirection);
+                //console.log('distance from origin:' + panObj.distanceFromOrigin + ' ' + 'direction from origin:' + panObj.directionFromOrigin + ' ' + 'current direction:' + panObj.currentDirection);
+                console.log('Distance from origin:'+panObj.distanceFromOrigin);
+                lastDistanceFromOrigin = panObj.distanceFromOrigin;
+                processDirection(panObj.directionFromOrigin, panObj.currentDirection);
                 
-                if(isUP(panObj.currentDirection) || isDOWN(panObj.currentDirection)) {
-                    //console.log('Its going UP or DOWN');
-                    
-                }
-                else if(isRIGHT(panObj.currentDirection) || isLEFT(panObj.currentDirection)) {
-                    //console.log('Its going RIGHT or LEFT');
-                }
+                // if(isUP(panObj.currentDirection) || isDOWN(panObj.currentDirection)) {
+                //     //console.log('Its going UP or DOWN');
+                // }
+                // else if(isRIGHT(panObj.currentDirection) || isLEFT(panObj.currentDirection)) {
+                //     //console.log('Its going RIGHT or LEFT');
+                // }
 
-                // if(isUpPoolMax()) {
-                //     direction = "UP";
-                //     newlySensed = itemInTheMiddle();
-                //     if(newlySensed && newlySensed != lastSensed) {
-                //         lastSensed = newlySensed;
-                //         setSpeakingAtId(lastSensed.id);
-                //         speakNavigationChange(lastSensed.id);
-                //     }
-                // }
-                // else if(isDownPoolMax()) {
-                //     direction = "DOWN";
-                //     newlySensed = itemInTheMiddle();
-                //     if(newlySensed && newlySensed != lastSensed) {
-                //         lastSensed = newlySensed;
-                //         setSpeakingAtId(lastSensed.id);
-                //         speakNavigationChange(lastSensed.id);
-                //     }
-                // }
+                if(isUpPoolMax()) {
+                    direction = "UP";
+                    newlySensed = itemInTheMiddle();
+                    if(newlySensed && newlySensed != lastSensed) {
+                        lastSensed = newlySensed;
+                        setSpeakingAtId(lastSensed.id);
+                        speakNavigationChange(lastSensed.id);
+                    }
+                }
+                else if(isDownPoolMax()) {
+                    direction = "DOWN";
+                    newlySensed = itemInTheMiddle();
+                    if(newlySensed && newlySensed != lastSensed) {
+                        lastSensed = newlySensed;
+                        setSpeakingAtId(lastSensed.id);
+                        speakNavigationChange(lastSensed.id);
+                    }
+                }
                 
             });
 
@@ -432,29 +436,29 @@
             zingPan.end = function(ev) {
                 console.log('pan end');
                 console.log(ev);
-                // if(isLeftPoolMax()) {
-                //     // confirmed movement in left
-                //     console.log('Confirmed movement to the left');
-                //     //processCurrentSelection();
+                if(isLeftPoolMax() && lastDistanceFromOrigin > HORIZONTAL_DRAG_THRESHOLD) {
+                    // confirmed movement in left
+                    console.log('Confirmed movement to the left');
+                    processCurrentSelection();
                     
-                // }
-                // else if(isRightPoolMax()) {
-                //     // confirmed movement in right
-                //     console.log('Confirmed movement to the right');
+                }
+                else if(isRightPoolMax() && lastDistanceFromOrigin > HORIZONTAL_DRAG_THRESHOLD) {
+                    // confirmed movement in right
+                    console.log('Confirmed movement to the right');
                     
-                // }
-                // else if(isUpPoolMax()) {
-                //     //navigationRequest("UP");
-                //     direction = "UP";
-                //     console.log('Confirmed movement to Up');
-                //     if(newlySensed) scrollElementToCenter(newlySensed);
-                // }
-                // else if(isDownPoolMax()) {
-                //     //navigationRequest("DOWN");
-                //     direction = "DOWN";
-                //     console.log('Confirmed movement to Down');
-                //     if(newlySensed) scrollElementToCenter(newlySensed);
-                // }
+                }
+                else if(isUpPoolMax()) {
+                    //navigationRequest("UP");
+                    direction = "UP";
+                    console.log('Confirmed movement to Up');
+                    // if(newlySensed) scrollElementToCenter(newlySensed);
+                }
+                else if(isDownPoolMax()) {
+                    //navigationRequest("DOWN");
+                    direction = "DOWN";
+                    console.log('Confirmed movement to Down');
+                    // if(newlySensed) scrollElementToCenter(newlySensed);
+                }
                 
                 return endPan.call(this,ev);
             }
@@ -476,7 +480,10 @@
                 taps: 2,
                 posThreshold: 20 
             }) );
-            mc.add( new Hammer.Tap({ event: 'singletap' }) );
+            mc.add( new Hammer.Tap({ 
+                event: 'singletap',
+                threshold: 10
+            }) );
 
             mc.add(new Hammer.Press( {
                 event: 'press',
@@ -491,35 +498,36 @@
 
 
             mc.on("singletap", function(ev) {
-                if(!isSpeaking()) {
-                    requestSpeakNow(); 
-                }
+                // if(!isSpeaking()) {
+                //     requestSpeakNow(); 
+                // }
+                
             });
 
             mc.on("doubletap", function(ev) {
-                console.log('Type:' + ev.type);
-                processCurrentSelection();
+                
+                //processCurrentSelection();
             });
 
             let pressInterval = null;
             mc.on('press', function(ev) {
                 console.log('' + ev.type + ' time:' + ev.deltaTime);
                 console.log('X:' + ev.center.x + ", Y:" + ev.center.y);
-                let timeToInterval = 500 - ev.deltaTime;
-                pressInterval = setTimeout(function() {
-                    //modulateEarcon(earcons[OPEN_SUCCESS], 1.0);
-                    if(isSpeaking()) {
-                        Android.vibrateOnce();
-                        requestSpeakNow();
-                    }
+                // let timeToInterval = 500 - ev.deltaTime;
+                // pressInterval = setTimeout(function() {
+                //     //modulateEarcon(earcons[OPEN_SUCCESS], 1.0);
+                //     if(isSpeaking()) {
+                //         Android.vibrateOnce();
+                //         requestSpeakNow();
+                //     }
                     
-                }, timeToInterval);
+                // }, timeToInterval);
             });
 
             mc.on('pressup', function(ev) {
                 console.log('' + ev.type + ' time:' + ev.deltaTime);
                 
-                if(pressInterval) clearTimeout(pressInterval);
+                //if(pressInterval) clearTimeout(pressInterval);
             });
             
         }

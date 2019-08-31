@@ -250,7 +250,9 @@ function getTopDiscourse() {
 function getNextMetaDiscourse(time, playingObject) {
     // returns the discourse object
     let discourseList = playingObject.discourseList;
+    let playIndex = playingObject.playSerial;
     let resDiscourse = null;
+
     for(let i=0; i<discourseList.length; i++) {
         let aDiscourse = discourseList[i];
 
@@ -259,6 +261,26 @@ function getNextMetaDiscourse(time, playingObject) {
             break;
         }
     }
+    if(resDiscourse) return resDiscourse;
+    discourseList = [];
+    
+    while(discourseList.length == 0) {
+        playIndex++;
+        if(playIndex > getPlayListSize() - 1) break;
+        playingObject = getPlayFromPlayList(playIndex);
+        discourseList = playingObject.discourseList;
+        time = 0;
+    }
+    
+    for(let i=0; i<discourseList.length; i++) {
+        let aDiscourse = discourseList[i];
+
+        if(aDiscourse.startTime >= time) {
+            resDiscourse = aDiscourse;
+            break;
+        }
+    }
+    
 
     return resDiscourse;
 }
@@ -273,7 +295,33 @@ function saveDiscourseForDetails(discourseObject) {
 function getPrevMetaDiscourse(time, playingObject) {
     // returns the discourse object
     let discourseList = playingObject.discourseList;
+    let playIndex = playingObject.playSerial;
     let resDiscourse = null;
+
+    for(let i=discourseList.length - 1; i >= 0; i--) {
+        let aDiscourse = discourseList[i];
+
+        if(aDiscourse.startTime < time) {
+            resDiscourse = aDiscourse;
+            if(aDiscourse.endTime >= (time - 0.2) && aDiscourse.endTime <= (time + 0.2)) {
+                if(i>0) resDiscourse = discourseList[i-1];
+                else resDiscourse = null;
+            } 
+            break;
+        }
+    }
+    if(resDiscourse) return resDiscourse;
+    discourseList = [];
+
+    while(discourseList.length == 0) {
+        playIndex--;
+        if(playIndex < 0) break;
+        playingObject = getPlayFromPlayList(playIndex);
+        if(playingObject.type != MAIN) continue;
+        discourseList = playingObject.discourseList;
+        time = playingObject.sentenceList[playingObject.sentenceList.length - 1].endTime + 0.5; // 0.5 seconds buffer to catch the discourse marker
+    }
+
     for(let i=discourseList.length - 1; i >= 0; i--) {
         let aDiscourse = discourseList[i];
 
