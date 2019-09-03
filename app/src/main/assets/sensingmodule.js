@@ -87,7 +87,8 @@ function senseLine() {
     if(elementOnLine.tagName == "SPAN") {
         // could be a word
         //console.log(elementOnLine);
-        resultSensing = findFirstSentenceInCurrentLine(elementOnLine).startId;
+        if(findFirstSentenceInCurrentLine(elementOnLine)) resultSensing = findFirstSentenceInCurrentLine(elementOnLine).startId;
+        
     }
     else if(elementOnLine.tagName == "H2" || elementOnLine.tagName == "H3") {
         // possibly titles or section headers
@@ -225,4 +226,23 @@ function findSentenceFromTime(time, sentences) {
         }
     }
     return resSentence;
+}
+
+function handleDeadTime(time, sentences, audioLength) {
+    let lastSentence = null;
+    let nSentence = sentences.length;
+    if(time < audioLength) {
+        // dead time detected
+        // find the last sentence before deadtime
+        if(time > sentences[nSentence - 1].endTime) lastSentence = sentences[nSentence - 1];
+        else {
+            for(let i=1; i<nSentence; i++) {
+                if(time > sentences[i-1].endTime && time < sentences[i].startTime) {
+                    lastSentence = sentences[i-1];
+                    break;
+                }
+            }
+        }
+    }
+    return lastSentence;
 }

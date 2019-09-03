@@ -4,8 +4,8 @@
 <head>
     <title>Impact of Contextual Factors on Snapchat Public Sharing</title>
     <!-- Copyright (c) 2010-2015 The MathJax Consortium -->
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
-    <meta name="viewport" content="width=device-width; initial-scale=1.0;"></meta>
+    <meta http-equiv="Content-Type" content="text/html, charset=UTF-8"></meta>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
     <link media="screen, print" rel="stylesheet" href="https://dl.acm.org/pubs/lib/css/bootstrap.min.css" />
     <link media="screen, print" rel="stylesheet" href="https://dl.acm.org/pubs/lib/css/bootstrap-theme.min.css" />
@@ -169,7 +169,6 @@
     let readingElementId = null;
     let globalSpeechRate = 1.0;
     let lastMediaObject = null;
-    let delayAndStackRequest = false;
     let visualStatusManager = function(state, sentenceWithVisual) {
         this.state = state;
         this.sentenceWithVisual = sentenceWithVisual;
@@ -177,6 +176,7 @@
     let vsManager = null;
     let pageLocation = 'snapchat.html';
     let playheadLocationChanged = true;
+    let fabButtonTimer = null;
 
     function checkStorage() {
         if(typeof(Storage) !== "undefined") {
@@ -187,16 +187,16 @@
                 let playObjRequested = getPlayFromContainerId(containerIdRequested); 
                 if(containerIdRequested == "abstract_para1") {
                     readingElementId = playObjRequested.startId;
-                    window.location.href = pageLocation + '#' + containerIdRequested;
+                    //window.location.href = pageLocation + '#' + containerIdRequested;
                     //document.getElementById(readingElementId).scrollIntoView();
-                    //scrollElementToCenter(document.getElementById(readingElementId));
+                    scrollElementToCenter(document.getElementById(readingElementId));
                     playObjRequested = getPlayFromPlayList(playObjRequested.playSerial - 1);
                 }
                 else {
                     readingElementId = playObjRequested.startId;
                     //document.getElementById(readingElementId).scrollIntoView();
-                    //scrollElementToCenter(document.getElementById(readingElementId));
-                    window.location.href = pageLocation + '#' + containerIdRequested;
+                    scrollElementToCenter(document.getElementById(readingElementId));
+                    // window.location.href = pageLocation + '#' + containerIdRequested;
                 }
                 localStorage.removeItem(OVERVIEW_REQUEST_ID);
                 updatePlaybackStatus(PLAYING);
@@ -241,12 +241,11 @@
             lastMediaObject = mediaObject;
             clearSentenceProcessor();
             clearVisuals();
-            globalSpeechRate = 1.0;
-            delayAndStackRequest = false;
+            //globalSpeechRate = 1.0;
             //clearDiscourseQueue();
-            if(isFigureFabDisplayed()) {
-                cancelFigureFab();
-            }
+            // if(isFigureFabDisplayed()) {
+            //     cancelFigureFab();
+            // }
         }
     }
 
@@ -312,7 +311,8 @@
 
         if(mediaType == ANNOUNCEMENT) {
             let readingNowAnnouncementElement = document.getElementById("readingnowAudio");
-            readingNowAnnouncementElement.setAttribute("src", earcons[READING_NOW]);
+            if(mediaSource.search("main") > 0) readingNowAnnouncementElement.setAttribute("src",earcons[SECTION_ANNOUNCEMENT]);
+            else readingNowAnnouncementElement.setAttribute("src", earcons[SUBSECTION_ANNOUNCEMENT]);
             readingNowAnnouncementElement.play();
             readingNowAnnouncementElement.onended = function() {
                 readingNowAnnouncementElement.pause();
@@ -357,20 +357,21 @@
                         // not notified; send notification, and display button to see figure
                         sendNotification(sentenceWithVisual);
                         vsManager = new visualStatusManager("cancel", sentenceWithVisual);
-                        let maxDuration = sentenceWithVisual.endTime - sentenceWithVisual.startTime + 5;
-                        requestFabclicker(getVizObjectById(sentenceWithVisual.visualId).nickname); 
+                        let maxDuration = (sentenceWithVisual.endTime - sentenceWithVisual.startTime + MAX_FAB_BUTTON_TIME) * 1000;
+                        
+                        requestFabclicker(sentenceWithVisual.visualId, maxDuration); 
                     }
                     
-                    if(currentSentence && currentSentence.serial > sentenceWithVisual.serial && isFigureFabDisplayed() && progressInSentence(currentSentence, contentAudioElm.currentTime) > 0.50) {
-                        cancelFigureFab();
-                        popVisualShow(sentenceWithVisual.visualId);
-                    }
+                    // if(currentSentence && currentSentence.serial > sentenceWithVisual.serial && isFigureFabDisplayed() && progressInSentence(currentSentence, contentAudioElm.currentTime) > 0.50) {
+                    //     cancelFigureFab();
+                    //     popVisualShow(sentenceWithVisual.visualId);
+                    // }
                 }
-                else if(processedSentenceCount() > 1) {
-                    // gone past the sentence with visual
-                    // delete the last sentence from visual queue to make it eligible for re-processing.
-                    clearLastSentenceFromProcessor();
-                }
+                // else if(processedSentenceCount() > 1) {
+                //     // gone past the sentence with visual
+                //     // delete the last sentence from visual queue to make it eligible for re-processing.
+                //     clearLastSentenceFromProcessor();
+                // }
             }
         };
 
@@ -391,7 +392,7 @@
                     //end of announcement, now play the caption
                     mediaObject.isCaption = true;
                     nextMediaObject = mediaObject;
-                    nextStartId = mediaObject.captionContainerId;
+                    nextStartId = mediaObject.id;
                     nextStartTime = 0;
                     setTimeout(function() {
                         startPlayback(nextMediaObject, nextStartId, nextStartTime);
@@ -545,6 +546,9 @@
                 else {
                     // its a text object
                     let currentSentence = findSentenceFromTime(timePlaying, playingSentenceList);
+                    if(currentSentence == null) {
+                        currentSentence = handleDeadTime(timePlaying, playingSentenceList, cntAudio.duration);
+                    }
                     if(currentSentence && currentSentence.serial < playingSentenceList.length -1) {
                         // next sentence available
                         modulateEarcon(earcons[SENTENCE_DELIM], 1.0);
@@ -569,6 +573,9 @@
                 else if(currentPlayObject.type == MAIN) {
                     // currently playing a text
                     let currentSentence = findSentenceFromTime(timePlaying, playingSentenceList);
+                    if(currentSentence == null) {
+                        currentSentence = handleDeadTime(timePlaying, playingSentenceList, cntAudio.duration);
+                    }
                     if(timePlaying - currentSentence.startTime <= 3) {
                         // go to previous sentence
                         if(currentSentence.serial > 0) {
@@ -612,9 +619,11 @@
             if(onlineElement.id == sentenceOnline.startId) {
                 modulateEarcon(earcons[SENTENCE_DELIM], 1.0);
                 setReadingElementId(onlineElement.id);
+                updatePlaybackStatus(PLAYING);
                 playAudio();
             }
             else {
+                updatePlaybackStatus(PLAYING);
                 setReadingElementId(onlineElement.id);
                 playAudio();
             }
@@ -623,6 +632,7 @@
             modulateEarcon(earcons[SECTION_DELIM], 1.0);
             let playObject = getPlayFromContainerId(onlineElement.id);
             setReadingElementId(onlineElement.id);
+            updatePlaybackStatus(PLAYING);
             startPlayback(playObject, playObject.startId, 0);
         }
     }
@@ -637,6 +647,7 @@
                 // go to next paragraph
                 iterator = currentPlayIndex + 1;
                 nextPlayObject = getPlayFromPlayList(iterator);
+                updatePlaybackStatus(PLAYING);
                 startPlayback(nextPlayObject, nextPlayObject.startId, 0);
             }
             else if(moveDir == "DOWN") {
@@ -654,6 +665,7 @@
                     modulateEarcon(earcons[PARAGRAPH_DELIM], 1.0);
                     setReadingElementId(nextPlayObject.startId);
                 }
+                updatePlaybackStatus(PLAYING);
                 startPlayback(nextPlayObject, nextPlayObject.startId, 0);
             }
         }
@@ -672,8 +684,13 @@
 
     }
 
-    function requestFabclicker(text) {
-        displayFigureFab(text);
+    function requestFabclicker(visualId, maxDuration) {
+        displayFigureFab(getVizObjectById(visualId).nickname);
+        fabButtonTimer = setTimeout(function() {
+            cancelFigureFab();
+            popVisualShow(visualId);
+            
+        }, maxDuration);
     }
 
     function handlefabclicker() {
@@ -681,6 +698,9 @@
             // user is now watching the figure
             // pause main audio and save position
             // start from the visual audio
+            if(fabButtonTimer) {
+                clearTimeout(fabButtonTimer);
+            }
             changeFigureFab();
             vsManager.state = "close";
             let vizSentence = vsManager.sentenceWithVisual;
@@ -689,7 +709,7 @@
             popVisualShow(vizSentence.visualId);
             let vizObject = getVizObjectById(vizSentence.visualId);
             vizObject.resumeId = storeBeforePause(false);
-            startPlayback(vizObject, vizObject.announcementContainerId, 0);
+            startPlayback(vizObject, vizObject.id, 0);
             // disable touch so that touch do not interfere with figure
             // also remove boxes to make the view clear
             disableTouchFunctions();
@@ -745,7 +765,7 @@
             if(playheadLocationChanged) {
                 currentPlayingId = senseLine();
                 if(currentPlayingId == null) {
-                    currentPlayingId = elementAtCenterPointer();
+                    currentPlayingId = elementAtCenterPointer().id;
                 } 
                 console.log(currentPlayingId);
                 playingTime = getWordTimestamp(document.getElementById(currentPlayingId));
@@ -762,7 +782,7 @@
         
         if(status) {
             // moving forward
-            let discourse = getNextMetaDiscourse(cntAudioElm.currentTime, playingObject);
+            let discourse = getNextMetaDiscourse(playingTime, playingObject);
             console.log(discourse);
             if(discourse) {
                 playingObject = getPlayFromContainerId(getContainerId(document.getElementById(discourse.startId)));
@@ -772,7 +792,7 @@
         }
         else {
             // moving back
-            let discourse = getPrevMetaDiscourse(cntAudioElm.currentTime, playingObject);
+            let discourse = getPrevMetaDiscourse(playingTime, playingObject);
             console.log(discourse);
             if(discourse) {
                 playingObject = getPlayFromContainerId(getContainerId(document.getElementById(discourse.startId)));
@@ -984,17 +1004,25 @@
                     <div class="title-info">
                         <h2 id="sec4_main"> <span class="section-number">4</span> PARTICIPANT SUMMARY</h2> </div>
                 </header>
-                <p id="sec4_main_para1">The demographics of our survey sample reflects that of the Snapchat userbase, as the gender balance leaned slightly female and those under 35 years old comprised over 60% of the population&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0033">33</a>]. We analyzed the Snapchat scores of participants who reported a number in the range 1 to 1,000,000, and observed that the majority of our participants were moderately active in their use of Snapchat. In general, our participants were somewhat privacy-sensitive, averaging 5.41, 5.17, and 4.90 (out of 7.00) on the IUIPC measures for control, awareness, and collection, respectively. Based off of participants&#x2019; self-reported values, both the mean and median of each TIPI personality measure fell between 3.50 and 4.00 (neither agree nor disagree). Additional demographic details of our survey population are presented in Table&#x00A0;<a class="tbl" href="#tab1">1</a>.</p>
-                <div class="table-responsive" id="tab1">
-                    <div class="table-caption"> <span class="table-number">Table 1:</span> <span class="table-title">Demographics of 1,515 survey participants included in our analysis. Our survey population was reflective of the overall demographics of Snapchat users in terms of age and gender.</span> </div>
+                <figure id="tab1"> 
+                    <img src="img/tab1.png" class="img-responsive" alt="" />
+                    <div class="table-caption"> 
+                        <span id="tab1announceId" class="figure-number">Table 1:</span> 
+                        <span id="tab1captionId" class="figure-title">Demographics of 1,515 survey participants included in our analysis. Our survey population was reflective of the overall demographics of Snapchat users in terms of age and gender.</span> 
+                    </div>
+                </figure>
+                <!-- <div class="table-responsive" id="tab1">
+                    <div class="table-caption"> <span id="tab1announceId" class="table-number">Table 1:</span> <span id="tab1captionId" class="table-title">Demographics of 1,515 survey participants included in our analysis. Our survey population was reflective of the overall demographics of Snapchat users in terms of age and gender.</span> </div>
+                    
                     <table class="table">
                         <tbody>
                             <tr>
-                                <td> <img src="http://deliveryimages.acm.org/10.1145/3310000/3300256/images/chi2019-26-img1.svg" class="img-responsive" alt="" /> </td>
+                                <td> <img src="img/tab1.svg" class="img-responsive"  /> </td>
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </div> -->
+                <p id="sec4_main_para1">The demographics of our survey sample reflects that of the Snapchat userbase, as the gender balance leaned slightly female and those under 35 years old comprised over 60% of the population&#x00A0;[<a class="bib" data-trigger="hover" data-toggle="popover" data-placement="top" href="#BibPLXBIB0033">33</a>]. We analyzed the Snapchat scores of participants who reported a number in the range 1 to 1,000,000, and observed that the majority of our participants were moderately active in their use of Snapchat. In general, our participants were somewhat privacy-sensitive, averaging 5.41, 5.17, and 4.90 (out of 7.00) on the IUIPC measures for control, awareness, and collection, respectively. Based off of participants&#x2019; self-reported values, both the mean and median of each TIPI personality measure fell between 3.50 and 4.00 (neither agree nor disagree). Additional demographic details of our survey population are presented in Table&#x00A0;<a class="tbl" href="#tab1">1</a>.</p>
             </section>
             <section id="sec-21">
                 <header>
@@ -1352,6 +1380,7 @@
                 }
                 else if(isUpPoolMax()) {
                     //navigationRequest("UP");
+                    direction = "UP";
                     if(getPlaybackStatus() == STOPPED) {
                         onPlayheadLocationChangeListener();
                     }
@@ -1370,7 +1399,7 @@
                     
                 }
                 else if(isDownPoolMax()) {
-                    
+                    direction = "DOWN";
                     if(getPlaybackStatus() == STOPPED) {
                         onPlayheadLocationChangeListener();
                     }
