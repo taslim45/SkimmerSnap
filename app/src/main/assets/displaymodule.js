@@ -157,16 +157,22 @@ function displayNumericOverlay(wordObject) {
     numOverlayWrapper.id = "overlay" + wordObject.id;
     let wordElement = document.getElementById(wordObject.id);
     //let yPlacement = (window.innerHeight/2) - 200 + (50 * getNumericOverlayCount());
-    let yPlacement = wordElement.getBoundingClientRect().y - 25;
-    let xPlacement = wordElement.getBoundingClientRect().x;
-    numOverlayWrapper.style.top = yPlacement + "px";
-    numOverlayWrapper.style.left = xPlacement + "px";
+    //let yPlacement = wordElement.getBoundingClientRect().y - 25;
+    //let xPlacement = wordElement.getBoundingClientRect().x;
+    //numOverlayWrapper.style.top = yPlacement + "px";
+    numOverlayWrapper.style.top = (0.35 * window.innerHeight) + "px";
+    numOverlayWrapper.style.left = (0.40 * window.innerWidth) + "px";
+    numOverlayWrapper.style.position = "fixed";
+    // if(xPlacement > (0.75 * window.innerWidth)) {
+    //     numOverlayWrapper.style.right = (window.innerWidth - xPlacement) + "px";
+    // }
+    // else numOverlayWrapper.style.left = xPlacement + "px";
 
     let numOverlayInsider = document.createElement("DIV");
     numOverlayInsider.className = "numericoverlay";
     numOverlayInsider.id = "insider" + getNumericOverlayCount();
     numOverlayInsider.innerHTML = wordObject.wordStr;
-    numOverlayInsider.style.fontSize = "14px";
+    numOverlayInsider.style.fontSize = "30px";
 
     numOverlayWrapper.appendChild(numOverlayInsider);
     numOverlayWrapper.style.display = "block";

@@ -206,7 +206,7 @@
             let audioPipeline = [];
             // push items in inverted order
             audioPipeline.push(itemData.audioSource);
-            audioPipeline.push(earcons[READING_NOW]); // "reading now" audio file
+            if(currentPositionId !== "overviewhighlight") audioPipeline.push(earcons[READING_NOW]); // "reading now" audio file
             speakNow(audioPipeline, audioPipeline.length - 1);
         }
 

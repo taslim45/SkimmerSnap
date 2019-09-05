@@ -76,6 +76,16 @@ function getPlayFromContainerId(elementId) {
             break;
         }
     }
+    if(resPlayObj == null) {
+        // try searching the visual objects
+        for(let i=0; i<getVisualListSize(); i++) {
+            let vizObject = getVisualFromList(i);
+            if(elementId == vizObject.announcementContainerId || elementId == vizObject.captionContainerId) {
+                resPlayObj = vizObject;
+                break;
+            }
+        }
+    }
     return resPlayObj;
 }
 

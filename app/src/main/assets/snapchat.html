@@ -33,7 +33,18 @@
     <script src="navigationhandler.js"></script>
 
     <style>
-        
+        .boxbuttons {
+            background-color: rgba(255,255,255,0.7);
+            vertical-align: middle;
+            text-align: center;
+        }
+        .boxbuttons img {
+            position: absolute;
+            height: 64px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
         #figurefab {
             height: 40px;
             background-color: #3366cc;
@@ -91,6 +102,7 @@
             border-color: yellowgreen;
             border-width: thin;
             display: none;
+            pointer-events: none;
         }
         .overlaywrapper {
             text-align: center;
@@ -177,6 +189,7 @@
     let pageLocation = 'snapchat.html';
     let playheadLocationChanged = true;
     let fabButtonTimer = null;
+    let discourseRestartTimer = null;
 
     function checkStorage() {
         if(typeof(Storage) !== "undefined") {
@@ -188,6 +201,7 @@
                 if(containerIdRequested == "abstract_para1") {
                     readingElementId = playObjRequested.startId;
                     //window.location.href = pageLocation + '#' + containerIdRequested;
+                    console.log('if ' + containerIdRequested);
                     //document.getElementById(readingElementId).scrollIntoView();
                     scrollElementToCenter(document.getElementById(readingElementId));
                     playObjRequested = getPlayFromPlayList(playObjRequested.playSerial - 1);
@@ -196,7 +210,8 @@
                     readingElementId = playObjRequested.startId;
                     //document.getElementById(readingElementId).scrollIntoView();
                     scrollElementToCenter(document.getElementById(readingElementId));
-                    // window.location.href = pageLocation + '#' + containerIdRequested;
+                    //window.location.href = pageLocation + '#' + containerIdRequested;
+                    console.log('else ' + containerIdRequested);
                 }
                 localStorage.removeItem(OVERVIEW_REQUEST_ID);
                 updatePlaybackStatus(PLAYING);
@@ -327,11 +342,15 @@
                 contentAudioElm.play();
                 
                 if(discourseRequest) {
+                    modulateEarcon(earcons[EVENING_SOUND], 1.0);
                     let whentostop = (discourseEndTime - startingTime) * 1000;
                     setTimeout(function() {
                         contentAudioElm.pause();
-                        updatePlaybackStatus(STOPPED);
                         setReadingElementId(getTopDiscourse().sentenceStartId);
+                        discourseRestartTimer = setTimeout(function() {
+                            discourseRestartTimer = null;
+                            playAudio();
+                        }, 1000);
                     }, whentostop);
                 }
             }, COOLING_TIME);
@@ -421,7 +440,7 @@
             elementIdStoring = currentElementId;
             setReadingElementId(currentElementId);
         }
-        else {
+        else if(currentPlayingObject) {
             let wordList = currentPlayingObject.wordList;
             let timeNow = audioElement.currentTime;
             let left = 0;
@@ -462,7 +481,11 @@
     function playAudio() {
         // if startPosId indicates where to start, begin from there.
         // else start from the beginning
-        startPosId = getReadingElementId();
+        if(playheadLocationChanged) {
+            startPosId = senseLine();
+            if(startPosId == null) startPosId = findBeginningOfSentence();
+        }
+        else if(getReadingElementId()) startPosId = getReadingElementId();
         clearNumericOverlayQueue();
     
         if(startPosId) {
@@ -748,6 +771,10 @@
     }
 
     function metaDiscourseJump(status) {
+
+        if(discourseRestartTimer) {
+            clearTimeout(discourseRestartTimer);
+        }
         let playingIndex;
         let currentPlayingId;
         let playingObject;
@@ -787,6 +814,7 @@
             if(discourse) {
                 playingObject = getPlayFromContainerId(getContainerId(document.getElementById(discourse.startId)));
                 saveDiscourseForDetails(discourse);
+                updatePlaybackStatus(PLAYING);
                 startPlayback(playingObject, discourse.startId, discourse.startTime, true, discourse.endTime);
             }
         }
@@ -797,6 +825,7 @@
             if(discourse) {
                 playingObject = getPlayFromContainerId(getContainerId(document.getElementById(discourse.startId)));
                 saveDiscourseForDetails(discourse);
+                updatePlaybackStatus(PLAYING);
                 startPlayback(playingObject, discourse.startId, discourse.startTime, true, discourse.endTime);    
             }   
         }
@@ -1183,7 +1212,14 @@
                         <h2 id="sec6_main"> <span class="section-number">6</span> DISCUSSION</h2> </div>
                 </header>
                 <p id="sec6_main_para1">Our results suggest that contextual factors, such as the identity of the user, activity captured, location, and time, all have an impact on content sharing decisions on Snapchat. Sharing decisions were also found to be influenced by intrinsic factors and the audience and content of the Snap being shared. A summary of our results is presented in Table&#x00A0;<a class="tbl" href="#tab5">5</a>.</p>
-                <div class="table-responsive" id="tab5">
+                <figure id="tab5"> 
+                    <img src="img/tab5.png" class="img-responsive" alt="" />
+                    <div class="table-caption"> 
+                        <span id="tab5announceId" class="figure-number">Table 5:</span> 
+                        <span id="tab5captionId" class="figure-title">Summary of results for our two research questions.</span> 
+                    </div>
+                </figure>
+                <!-- <div class="table-responsive" id="tab5">
                     <div class="table-caption"> <span class="table-number">Table 5:</span> <span class="table-title">Summary of results for our two research questions.</span> </div>
                     <table class="table">
                         <tbody>
@@ -1192,7 +1228,7 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </div> -->
                 <section id="sec-50">
                     <header>
                         <div class="title-info">
@@ -1327,6 +1363,7 @@
         let midX = window.innerWidth * 0.50;
         let lastDistanceFromOrigin = 0;
         let isTouchEnabled = true;
+        
 
         function initZingTouch() {
             zt = new ZingTouch.Region(touchZone, true, false);
@@ -1366,7 +1403,8 @@
                 
             });
 
-            var endPan = zingPan.end; 
+            endPan = zingPan.end; 
+           
             zingPan.end = function(ev) {
                 if(!isTouchEnabled) return;
                 
@@ -1495,9 +1533,11 @@
                     console.log('center right');
                     if(playStatus == STOPPED) {
                         requestPlayPause();
+                        console.log('stopped state');
                     }
                     else if(playStatus == PLAYING && isTouchEnabled) {
                         sentenceJump("RIGHT");
+                        console.log('playing state');
                     }
                 }
                 
@@ -1560,12 +1600,16 @@
         function paintBoxes() {
             let topleftbox = document.createElement('div');
             topleftbox.id = 'topleftbox';
+            topleftbox.className = 'boxbuttons';
             let toprighttbox = document.createElement('div');
             toprighttbox.id = 'toprightbox';
+            toprighttbox.className = 'boxbuttons';
             let bottomleftbox = document.createElement('div');
             bottomleftbox.id = 'bottomleftbox';
+            bottomleftbox.className = 'boxbuttons';
             let bottomrightbox = document.createElement('div');
             bottomrightbox.id = 'bottomrightbox';
+            bottomrightbox.className = 'boxbuttons';
             topleftbox.style.width = toprighttbox.style.width = '' + window.innerWidth/2 + 'px';
             bottomleftbox.style.width = bottomrightbox.style.width = '' + (window.innerWidth * 0.50) + 'px';
             topleftbox.style.top = toprighttbox.style.top = '' + document.getElementById('topnavbar').getBoundingClientRect().height + 'px';
@@ -1576,9 +1620,25 @@
             bottomleftbox.style.bottom = bottomrightbox.style.bottom = '0px';
             bottomleftbox.style.left = '0px';
             bottomrightbox.style.right = '0px';
+
             topleftbox.style.border = toprighttbox.style.border = '2px dashed rgba(0, 255, 0, 0.3)';
-            
             bottomleftbox.style.border = bottomrightbox.style.border = '2px dashed rgba(0, 204, 255, 0.3)';
+
+            //topleftbox.style.backgroundColor = 'rgba(255,255,255,0.7)';
+            let topleftImageElm = document.createElement('IMG');
+            topleftImageElm.src = "img/rotated-decrease.png";
+            topleftbox.appendChild(topleftImageElm);
+            let toprightImageElm = document.createElement("IMG");
+            toprightImageElm.src = "img/rotated-increase.png";
+            toprighttbox.appendChild(toprightImageElm);
+
+            let bottomleftImageElm = document.createElement('IMG');
+            bottomleftImageElm.src = "img/dis-prev.png";
+            bottomleftbox.appendChild(bottomleftImageElm);
+            let bottomrightImageElm = document.createElement('IMG');
+            bottomrightImageElm.src = "img/dis-next.png";
+            bottomrightbox.appendChild(bottomrightImageElm);
+
             topleftbox.style.display = toprighttbox.style.display = bottomleftbox.style.display = bottomrightbox.style.display = 'block';
             topleftbox.style.position = toprighttbox.style.position = bottomleftbox.style.position = bottomrightbox.style.position = 'fixed';
 
@@ -1624,6 +1684,7 @@
             prepareUI();
             updatePlaybackStatus(STOPPED);
             initHighlightMap();
+            localStorage.removeItem(OVERVIEW_REQUEST_ID);
             checkStorage();
         }
     </script>
