@@ -10423,7 +10423,7 @@ let sec3_sub1_para1JSON =
               26.89
             ],
             [
-              "<strong>Identity</strong> -",
+              "&#8226 <strong>Identity</strong> -",
               28.04,
               28.78
             ],
@@ -10613,7 +10613,7 @@ let sec3_sub1_para1JSON =
               48.64
             ],
             [
-              "<strong>Activity</strong> -",
+              "&#8226 <strong>Activity</strong> -",
               50.3,
               51.03
             ],
@@ -11073,7 +11073,7 @@ let sec3_sub1_para1JSON =
               82.45
             ],
             [
-              "<strong>Location</strong> -",
+              "&#8226 <strong>Location</strong> -",
               84.17,
               84.91
             ],
@@ -11188,7 +11188,7 @@ let sec3_sub1_para1JSON =
               93.03
             ],
             [
-              "<strong>Time</strong> -",
+              "&#8226 <strong>Time</strong> -",
               95.5,
               95.93
             ],
@@ -16791,7 +16791,9 @@ let sec4_main_para1JSON =
             ],
             [
               46.38,
-              50.93
+              50.93,
+              true,
+              "tab1"
             ]
           ],
           "keywords": [
@@ -28903,7 +28905,7 @@ let sec5_sub6_para7JSON =
               13.13
             ]
           ],
-          "keyword": []
+          "keywords": []
         }
       ],
       "final": true
@@ -35024,7 +35026,7 @@ let sec7_main_para1JSON =
     "result_index": 0
 };
 
-var fig1announceIdJSON = 
+let fig1announceIdJSON = 
 {
   "results": [
     {
@@ -35057,7 +35059,7 @@ var fig1announceIdJSON =
   "result_index": 0
 };
 
-var fig1captionIdJSON = 
+let fig1captionIdJSON = 
 {
   "results": [
     {
