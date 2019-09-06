@@ -246,3 +246,27 @@ function handleDeadTime(time, sentences, audioLength) {
     }
     return lastSentence;
 }
+
+function getSuperContainerId(containerId) {
+    let idJoiner = [];
+    let splitParts = containerId.split("_");
+    
+    if(splitParts && splitParts.length >= 0) {
+        for(let j=0; j<splitParts.length - 1; j++) {
+            idJoiner.push(splitParts[j]);
+        }
+        if(idJoiner.length > 1) return idJoiner.join('_');
+        else return splitParts[0];
+    }
+    
+    return null;
+}
+
+function isContainerIdSectionTitle(containerId) {
+    let splitParts = containerId.split("_");
+
+    if(splitParts && splitParts.length >0 && (splitParts[splitParts.length - 1] === 'main' || splitParts[splitParts.length - 1].search('sub') >= 0)) {
+        return true;
+    }
+    return false;
+}

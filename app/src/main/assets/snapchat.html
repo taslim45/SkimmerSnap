@@ -835,6 +835,84 @@
         console.log('play head location has changed');
         playheadLocationChanged = true;
     }
+
+    function whereAmIAnnouncement() {
+        updatePlaybackStatus(STOPPED);
+        let currentHeadPositionId = senseLine();
+        if(currentHeadPositionId == null) {
+            currentHeadPositionId = elementAtCenterPointer().id;
+        }
+        
+    
+        if(currentHeadPositionId) {
+            let containerId = getContainerId(document.getElementById(currentHeadPositionId));
+            if(containerId === 'journaltitleId' || containerId === 'wherePublishedId') {
+                // nothing to announce here
+                console.log(containerId);
+            }
+            else if(containerId === 'abstract_para1') {
+                // handle abstract
+                
+                let audioPipe = [];
+                audioPipe.push('audio/section_count.mp3');
+                audioPipe.push('audio/abstract_main.mp3');
+                audioPipe.push('audio/ann_section.mp3');
+                audioPipe.push('audio/youarein.mp3');
+                audioPipe.push('audio/ann_sound.mp3');
+                
+                announcePosition(audioPipe,audioPipe.length - 1);
+            }
+            else if(isContainerIdSectionTitle(containerId)) {
+                // handle section title
+               
+                let playObj = getPlayFromContainerId(containerId);
+                let audioPipe = [];
+                audioPipe.push('audio/section_count.mp3');
+                audioPipe.push(playObj.audioSource);
+                if(containerId.search('main')>=0) {
+                    audioPipe.push('audio/ann_section.mp3');
+                }
+                else {
+                    audioPipe.push('audio/ann_subsection.mp3');
+                }
+                audioPipe.push('audio/youarein.mp3');
+                audioPipe.push('audio/ann_sound.mp3');
+                
+                announcePosition(audioPipe,audioPipe.length - 1);
+            }
+            else {
+                // possibly inside a paragraph
+                let superContainerId = getSuperContainerId(containerId);
+                
+                let playObj = getPlayFromContainerId(superContainerId);
+                let audioPipe = [];
+                audioPipe.push('audio/section_count.mp3');
+                audioPipe.push(playObj.audioSource);
+                if(superContainerId.search('main')>=0) {
+                    audioPipe.push('audio/ann_section.mp3');
+                }
+                else {
+                    audioPipe.push('audio/ann_subsection.mp3');
+                }
+                audioPipe.push('audio/youarein.mp3');
+                audioPipe.push('audio/ann_sound.mp3');
+                
+                announcePosition(audioPipe,audioPipe.length - 1);
+            }
+        }
+    }
+
+    function announcePosition(src, index) {
+        let readingNowElm = document.getElementById('readingnowAudio');
+        readingNowElm.setAttribute("src" , src[index]);
+        readingNowElm.play();
+        readingNowElm.onended = function() {
+            readingNowElm.pause();
+            readingNowElm.setAttribute("src", "");
+            index--;
+            if(index>=0) announcePosition(src,index);
+        };
+    }
 </script>
 </head>
 
@@ -1409,7 +1487,7 @@
                 
                 if(isLeftPoolMax()) {
                     // confirmed movement in left
-                    
+                    whereAmIAnnouncement();
                 }
                 else if(isRightPoolMax() && lastDistanceFromOrigin > HORIZONTAL_DRAG_THRESHOLD) {
                     // confirmed movement in right

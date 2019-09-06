@@ -102,20 +102,6 @@ function getTopElementFromSensingQueue() {
     }
 }
 
-function getSuperContainerId(containerId) {
-    let idJoiner = [];
-    let splitParts = containerId.split("_");
-    
-    if(splitParts && splitParts.length >= 0) {
-        for(let j=0; j<splitParts.length - 1; j++) {
-            idJoiner.push(splitParts[j]);
-        }
-        if(idJoiner.length > 1) return idJoiner.join('_');
-        else return splitParts[0];
-    }
-    
-    return null;
-}
 
 function panMovement(currentPlayObject, currentTime, sensedElement) {
     if(!presentInSensingQueue(sensedElement.id)) {
