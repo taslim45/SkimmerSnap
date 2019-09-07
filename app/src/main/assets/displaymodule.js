@@ -77,12 +77,12 @@ function highlightText(currentTime, wordsList, sentenceList) {
             let spanElm = document.getElementById(aWord.id);
             spanElm.style.border = "1px solid brown";
             if(aWord.isNumeric) {
-                // create overlay for 5 seconds
+                // create overlay for 3 seconds
                 if(document.getElementById("overlay" + aWord.id) == null) {
                     displayNumericOverlay(aWord);
                     window.setTimeout(function(){
                         removeNumericOverlay();
-                    }, 5000);
+                    }, 3000);
                 }
             }
             if( i > 0) {
@@ -160,8 +160,17 @@ function displayNumericOverlay(wordObject) {
     //let yPlacement = wordElement.getBoundingClientRect().y - 25;
     //let xPlacement = wordElement.getBoundingClientRect().x;
     //numOverlayWrapper.style.top = yPlacement + "px";
-    numOverlayWrapper.style.top = (0.35 * window.innerHeight) + "px";
-    numOverlayWrapper.style.left = (0.40 * window.innerWidth) + "px";
+    numOverlayWrapper.style.top = (0.30 * window.innerHeight) + "px";
+    if(getNumericOverlayCount() == 0) {
+        numOverlayWrapper.style.left = (0.10 * window.innerWidth) + "px";
+    }
+    else {
+        let overlayElm = getTopNumericOverlay();
+        let overlayElmX = overlayElm.getBoundingClientRect().x;
+        let overlayElmWidth = overlayElm.getBoundingClientRect().width;
+        numOverlayWrapper.style.left = (overlayElmX + overlayElmWidth + 10) + "px";
+    }
+    
     numOverlayWrapper.style.position = "fixed";
     // if(xPlacement > (0.75 * window.innerWidth)) {
     //     numOverlayWrapper.style.right = (window.innerWidth - xPlacement) + "px";
@@ -178,6 +187,13 @@ function displayNumericOverlay(wordObject) {
     numOverlayWrapper.style.display = "block";
     document.body.appendChild(numOverlayWrapper);
     numericOverlayQueue.push(numOverlayWrapper);
+}
+
+function getTopNumericOverlay() {
+    if(getNumericOverlayCount() > 0) {
+        let overlayElement = numericOverlayQueue[0];
+        return overlayElement;
+    }
 }
 
 function removeNumericOverlay() {
