@@ -180,7 +180,7 @@ function displayNumericOverlay(wordObject) {
     let numOverlayInsider = document.createElement("DIV");
     numOverlayInsider.className = "numericoverlay";
     numOverlayInsider.id = "insider" + getNumericOverlayCount();
-    numOverlayInsider.innerHTML = wordObject.wordStr;
+    numOverlayInsider.innerHTML = cleanString(wordObject.wordStr);
     numOverlayInsider.style.fontSize = "30px";
 
     numOverlayWrapper.appendChild(numOverlayInsider);
@@ -254,4 +254,37 @@ function displayDiscourseText(discourselist) {
             document.getElementById(wordId).style.color = 'purple';
         }
     }
+}
+
+function cleanString(str) {
+    let tempStr;
+
+    if(str.indexOf('(') == 0) {
+        // string starts with open parenthesis
+        tempStr = str.slice(1, str.length);
+        str = tempStr;
+    }
+    
+    if(str.indexOf(')') > 0) {
+        // closing parenthesis
+        tempStr = str.slice(0, str.indexOf(')'));
+        str = tempStr;
+    }
+
+    if(str.lastIndexOf('.') > 0 && str.indexOf('.') !== str.lastIndexOf('.')) {
+        tempStr = str.slice(0, str.lastIndexOf('.'));
+        str = tempStr;
+    }
+
+    if(str.lastIndexOf('.') > 0 && str.lastIndexOf('.') === str.length - 1) {
+        tempStr = str.slice(0, str.length - 1);
+        str = tempStr;
+    }
+
+    if(str.lastIndexOf(',')>0 && str.lastIndexOf(',') === str.length - 1) {
+        tempStr = str.slice(0, str.length - 1);
+        str = tempStr;
+    }
+
+    return str;
 }
