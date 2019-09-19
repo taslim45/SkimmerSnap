@@ -244,7 +244,7 @@ function createPlayList() {
     initVizMapper();
     populateVisualObject();
     for(let playIndex = 0; playIndex < audioFiles.length; playIndex++) {
-        //console.log(playIndex);
+        // console.log(playIndex);
         let playObj = new plays(containerIdList[playIndex], audioFiles[playIndex], jsonVarObj[playIndex], playContentType[playIndex], isTextDecorated[playIndex], playIndex, speechRateVariants[playIndex]);
         if(containerIdList[playIndex].length > 0) {
             playObj.wordList = getWords(containerIdList[playIndex], jsonVarObj[playIndex]);

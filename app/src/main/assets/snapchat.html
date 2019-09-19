@@ -837,6 +837,7 @@
     }
 
     function whereAmIAnnouncement() {
+        storeBeforePause(false);
         updatePlaybackStatus(STOPPED);
         let currentHeadPositionId = senseLine();
         if(currentHeadPositionId == null) {
@@ -945,8 +946,8 @@
                 </header>
                 <br/>
                 <div class="pubInfo">
-                    <p>DOI: <a href="" target="_blank">https://doi.org/10.1145/3290605.3300256</a>
-                        <br/><span id="wherePublishedId">CHI '19</span>: <a href="" target="_blank">Proceedings of CHI Conference on Human Factors in Computing Systems</a>, Glasgow, Scotland UK, May 2019</p>
+                    <p>DOI: <a href="" target="">https://doi.org/10.1145/3290605.3300256</a>
+                        <br/><span id="wherePublishedId">CHI '19</span>: <a href="" target="">Proceedings of CHI Conference on Human Factors in Computing Systems</a>, Glasgow, Scotland UK, May 2019</p>
                 </div>
                 <div class="abstract">
                     <p id="abstract_para1"><small>Public sharing is integral to online platforms. This includes the popular multimedia messaging application Snapchat, on which public sharing is relatively new and unexplored in prior research. In mobile-first applications, sharing contexts are dynamic. However, it is unclear how context impacts users&#x2019; sharing decisions. As platforms increasingly rely on user-generated content, it is important to also broadly understand user motivations and considerations in public sharing. We explored these aspects of content sharing through a survey of 1,515 Snapchat users. Our results indicate that users primarily have intrinsic motivations for publicly sharing Snaps, such as to share an experience with the world, but also have considerations related to audience and sensitivity of content. Additionally, we found that Snaps shared publicly were contextually different from those privately shared. Our findings suggest that content sharing systems can be designed to support sharing motivations, yet also be sensitive to private contexts.</small></p>
@@ -1347,6 +1348,12 @@
                         <h2 id="sec7_main"> <span class="section-number">7</span> CONCLUSION</h2> </div>
                 </header>
                 <p id="sec7_main_para1">We conducted a survey to explore the role of context in sharing decisions on Snapchat, as well as users&#x2019; general motivations and considerations when publicly sharing content. We observed that some contexts, such as Snaps of people or Snaps taken inside a home, were more likely to be privately shared to <em>My Story</em>, and were associated with less comfort with publicly sharing to <em>Our Story</em>. Additionally, participants&#x2019; motivations for public sharing were largely intrinsic, while considerations centered around the audience and content of the Snap. As such, our findings can inform the design of context-aware applications to better support user decision-making and preferences.</p>
+                <p>While other lists of bias exist from sources such as Pew, these lists contain far fewer sources. In general, these lists highly agree on their ratings, with sources such as HuffPost and Mother Jones on the far left, National Public Radio (NPR) and the New York Times to the center-left, Reuters and the Associated Press (AP) as unbiased, the New York Post and Forbes as center-right, and Breitbart and Fox News on the far right.</p>
+                <p id="sec7_main_para2">We compared ..</p>
+                <p>We analyzed the web history data in terms of web “sessions.” We used a one-hour-idle session delimiter to break web browsing activity into distinct sessions of interaction. This is standard practice, following guidance in Lalmas et al. and is widely used throughout the Internet industry to segment online behavior.</p>
+                <p>As the number of domains visited increases, the trend of browsing sites with a similar bias score continues. Overall, the news sites that are browsed together within a session have an average variance of 0.29 points of bias. Only 7.7% of sessions include sites with a bias score variance greater than one. Participants were not frequently going out of their way to find diverse accounts of a story.</p>
+                <p id="sec7_main_para3">Of sessions ...</p>
+                <p>In summary, we have seen that 61% of all news sessions only involve a single domain and 20% only involve a single article. When users do branch out, they most often seek sites with similar political bias, however 7.7% of the time they look for a news source with a different viewpoint. 70% of the time that users visit multiple news domains in a session, they read a story on the same topic on multiple sites, representing 25% of all news sessions. This analysis has allowed us to more deeply understand news browsing behaviors and how people get to and explore news on a variety of topics.</p>
             </section>
             <section id="sec-57">
                 <header>
@@ -1485,7 +1492,7 @@
             zingPan.end = function(ev) {
                 if(!isTouchEnabled) return;
                 
-                if(isLeftPoolMax()) {
+                if(isLeftPoolMax() && lastDistanceFromOrigin > HORIZONTAL_DRAG_THRESHOLD){
                     // confirmed movement in left
                     whereAmIAnnouncement();
                 }
