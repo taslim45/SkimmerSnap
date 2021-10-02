@@ -5,3 +5,4 @@ A demo of Skimmer is available here https://youtu.be/b62MvfLORmw
 Skimmer tech-stack:
 - Java
 - JavaScript (touch interactions and audio-playback)
+- HTML & CSS
